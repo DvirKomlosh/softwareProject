@@ -4,7 +4,7 @@ from numpy import linalg as lng
 from enum import Enum
 import myspkmeans
 
-np.random.seed(0)
+np.random.seed(0) # Set np.random.seed(0) at the beginning of your code.
 
 # The requested goal enum
 class goal_enum(Enum):
