@@ -4,7 +4,7 @@ from numpy import linalg as lng
 from enum import Enum
 import myspkmeans
 
-np.random.seed(0)
+np.random.seed(0) # Set np.random.seed(0) at the beginning of your code.
 
 # The requested goal enum
 class goal_enum(Enum):
@@ -72,13 +72,17 @@ def k_means_pp(k, clustering_data):
 
 # This function is responsible of outputting the data of the spk procedure.
 def output_spk(indices, centroids):
-    first_line = ",".join(str(indices))
-
+    print(",".join(["{:.4f}".format(indices[i]) for i in range(len(indices))]))
+    for row_index in range(len(centroids)):
+        print(",".join(["{:.4f}".format(centroids[row_index][i]) \
+            for i in range(len(centroids[row_index]))]))
 
 
 # This function is responsible of outputting the data of all other procedures.
-def output_other_than_spk(max):
-
+def output_other_than_spk(mat):
+    for row_index in range(len(mat)):
+        print(",".join(["{:.4f}".format(mat[row_index][i]) \
+            for i in range(len(mat[row_index]))]))
 
 
 if __name__ == '__main__':
