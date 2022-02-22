@@ -72,6 +72,8 @@ def k_means_pp(k, clustering_data):
 
 # This function is responsible of outputting the data of the spk procedure.
 def output_spk(indices, centroids):
+    first_line = ",".join(str(indices))
+
 
 
 # This function is responsible of outputting the data of all other procedures.
