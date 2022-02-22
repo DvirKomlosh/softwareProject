@@ -13,6 +13,7 @@ class goal_enum(Enum):
     ddg = 3
     lnorm = 4
     jacobi = 5
+    kmeans = 6
 
 
 # This function manages the reading from the input file,
@@ -148,26 +149,31 @@ if __name__ == '__main__':
     # Activate the wanted goal function using the CAPI file.
     if goal == goal_enum.spk:
         # Perform full spectral kmeans
-        jacobi_mat = myspkmeans.jacobi(data, k, jacobi_epsilon, max_rotations)
+        jacobi_mat = myspkmeans.fit(np.ndarray.tolist(data), N, d, k, \
+            jacobi_epsilon, max_rotations, None, goal_enum.jacobi)
         mu_indices, mu = k_means_pp(k, jacobi_mat)
-        found_centroids = myspkmeans.fit(N, d, k, max_iterations,
-            kmeans_epsilon, np.ndarray.tolist(data), np.ndarray.tolist(mu))
+        found_centroids = myspkmeans.fit_kmeans(np.ndarray.tolist(data), \
+            N, d, k, kmeans_epsilon, max_iterations, np.ndarray.tolist(mu), goal_enum.kmeans)
         if not found_centroids:
             exit(1)
         output_spk(mu_indices, found_centroids)
     else:
         if goal == goal_enum.wam:
             # Calculate and output the Weighted Adjacency Matrix
-            mat = myspkmeans.wam(data)
+            mat = myspkmeans.fit(np.ndarray.tolist(data), N, d, k, \
+                jacobi_epsilon, max_rotations, None, goal_enum.wam)
         elif goal == goal_enum.ddg:
             # Calculate and output the Diagonal Degree Matrix
-            mat = myspkmeans.ddg(data)
+            mat = myspkmeans.fit(np.ndarray.tolist(data), N, d, k, \
+                jacobi_epsilon, max_rotations, None, goal_enum.ddg)
         elif goal == goal_enum.lnorm:
             # Calculate and output the Normalized Graph Laplacian
-            mat = myspkmeans.lnorm(data)
+            mat = myspkmeans.fit(np.ndarray.tolist(data), N, d, k, \
+                jacobi_epsilon, max_rotations, None, goal_enum.lnorm)
         elif goal == goal_enum.jacobi:
             # Calculate and output the eigenvalues and eigenvectors
-            mat = myspkmeans.jacobi(data, k, jacobi_epsilon, max_rotations)
+            mat = myspkmeans.fit(np.ndarray.tolist(data), N, d, k, \
+                jacobi_epsilon, max_rotations, None, goal_enum.jacobi)
         else:
             # Invalid goal value
             print("An Error Has Occurred")
