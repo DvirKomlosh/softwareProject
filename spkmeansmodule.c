@@ -6,6 +6,15 @@
 #include <string.h>
 #include <math.h>
 
+enum goal_enum {
+    spk = 1,
+    wam = 2,
+    ddg = 3,
+    lnorm = 4,
+    jacobi = 5,
+    kmeans = 6
+};
+
 PyMODINIT_FUNC PyInit_mykmeanssp(void);
 static PyObject* fit(PyObject *self, PyObject *args);
 
@@ -61,7 +70,7 @@ static PyObject* fit(PyObject *self, PyObject *args)
     PyObject* po_additional_i_j;
     PyObject* po_mat_i;
 
-    int n, d, k, max, goal;
+    int n, d, k, max, goal_num;
     double EPSILON;
     PyObject* po_primary;
     double** primary;
@@ -71,11 +80,18 @@ static PyObject* fit(PyObject *self, PyObject *args)
 
     /* Receive the useful information from the user */
     if (!PyArg_ParseTuple(args, "OiiidiOi", &po_primary, &n, &d, &k, 
-    &EPSILON, &max, &po_additional, &goal))
+    &EPSILON, &max, &po_additional, &goal_num))
     {
         printf("An Error Has Occurred\n");
         return Py_BuildValue("");
     }
+
+    if (goal == 1) goal_enum = spk;
+    else if (goal == 2) goal_enum = wam;
+    else if (goal == 3) goal_enum = ddg;
+    else if (goal == 4) goal_enum = lnorm;
+    else if (goal == 5) goal_enum = jacobi;
+    else goal_enum = kmeans; 
 
     /* Transform the given PyObjects to double matrices */
     primary = (double **)malloc(n * sizeof(double *)); 
@@ -124,7 +140,7 @@ static PyObject* fit(PyObject *self, PyObject *args)
         }
     }
 
-    /* Activate the correct goal function */
+    /* Here we need to call the spkmeans.c processing function */
 
     /* Activate the KMeans() function */
     Kmeans(datapoints, centroids, n, d, k, max_iter, EPSILON);
