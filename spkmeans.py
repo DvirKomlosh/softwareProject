@@ -4,10 +4,11 @@ from numpy import linalg as lng
 from enum import Enum
 import myspkmeans
 
-np.random.seed(0) # Set np.random.seed(0) at the beginning of your code.
+np.random.seed(0)  # Set np.random.seed(0) at the beginning of your code.
+
 
 # The requested goal enum
-class goal_enum(Enum):
+class GoalEnum(Enum):
     spk = 1
     wam = 2
     ddg = 3
@@ -18,72 +19,88 @@ class goal_enum(Enum):
 
 # This function manages the reading from the input file,
 # and creation of the data matrix.
-def input_file_management(file_name):
+def input_file_management(filename):
     # Open the given file
     input_file = None
     try:
-        input_file = open(file_name, "r")
+        input_file = open(filename, "r")
     except FileNotFoundError:
         print("An Error Has Occurred")
-        exit(-1)
+        exit(1)
 
     lines = input_file.readlines()
     input_file.close()
-    N = len(lines)  # The amount of data points
+    N_val = len(lines)  # The amount of data points
     # Set dataset to have the size of the final data matrix
-    dataset = np.zeros((N, len(lines[0].split(','))))  
-    
+    dataset = np.zeros((N_val, len(lines[0].split(','))))
+
     # Fill up the dataset with the file's data
-    for row_index in range(N):
-        curr_line_vector = lines[row_index].strip('\n').split(',')
+    for row_index in range(N_val):
+        # Try to transform the input strings into float numbers.
+        curr_line_vector = None
+        try:
+            curr_line_vector = [float(num) for num in lines[row_index].strip('\n').split(',')]
+        except ValueError:
+            print("Invalid Input!")
+            exit(1)
         for column_index in range(len(curr_line_vector)):
             dataset[row_index][column_index] = curr_line_vector[column_index]
-
     return dataset
 
 
 # This function preforms the kmeans++ algorithm.
 # It receives the amount of clusters and the data,
 # and returns the centroids indexes, and the centroids themselves.
-def k_means_pp(k, clustering_data):
-    n = len(clustering_data)
-    d = np.zeros(n)
-    p = np.ones(n)
-    mu = np.zeros(shape=(k, len(clustering_data[0])))
-    mu_indecies = np.zeros(k)
+def k_means_pp(k_val, clustering_data):
+    n_val = len(clustering_data)
+    d_val = np.zeros(n_val)
+    p = np.ones(n_val)
+    mu_arr = np.zeros(shape=(k_val, len(clustering_data[0])))
+    indices = np.zeros(k_val)
 
-    mu_indecies[0] = np.random.choice(a=np.arange(n))
-    mu[0] = clustering_data[int(mu_indecies[0])]
+    indices[0] = np.random.choice(a=np.arange(n_val))
+    mu_arr[0] = clustering_data[int(indices[0])]
 
-    for index in range(1, k):
+    for index in range(1, k_val):
 
-        for l_index in range(n):
-            d[l_index] = np.min([lng.norm(clustering_data[l_index] - \
-                mu[j_index]) ** 2 for j_index in range(index)])
+        for l_index in range(n_val):
+            d_val[l_index] = \
+                np.min([lng.norm(clustering_data[l_index] - mu_arr[j_index])
+                        ** 2 for j_index in range(index)])
 
-        d_sum = sum(d)
-        for l_index in range(n):
-            p[l_index] = d[l_index] / d_sum
+        d_sum = sum(d_val)
+        for l_index in range(n_val):
+            p[l_index] = d_val[l_index] / d_sum
 
-        mu_indecies[index] = np.random.choice(a=np.arange(n), p=p)
-        mu[index] = clustering_data[int(mu_indecies[index])]
+        indices[index] = np.random.choice(a=np.arange(n_val), p=p)
+        mu_arr[index] = clustering_data[int(indices[index])]
 
-    return mu_indecies, mu
+    return indices, mu_arr
 
 
 # This function is responsible of outputting the data of the spk procedure.
 def output_spk(indices, centroids):
     print(",".join(["{:.4f}".format(indices[i]) for i in range(len(indices))]))
     for row_index in range(len(centroids)):
-        print(",".join(["{:.4f}".format(centroids[row_index][i]) \
-            for i in range(len(centroids[row_index]))]))
+        print(",".join(["{:.4f}".format(centroids[row_index][i])
+                        for i in range(len(centroids[row_index]))]))
 
 
 # This function is responsible of outputting the data of all other procedures.
-def output_other_than_spk(mat):
-    for row_index in range(len(mat)):
-        print(",".join(["{:.4f}".format(mat[row_index][i]) \
-            for i in range(len(mat[row_index]))]))
+def output_other_than_spk(matrix):
+    for row_index in range(len(matrix)):
+        print(",".join(["{:.4f}".format(matrix[row_index][i])
+                        for i in range(len(matrix[row_index]))]))
+
+
+# This function receives a matrix, and checks if it is a symmetric matrix.
+def jacobi_input_validation(input_mat):
+    for i in range(len(jacobi_mat)):
+        for j in range(i+1, len(input_mat)):
+            # An asymmetry is detected.
+            if input_mat[i][j] != input_mat[j][i]:
+                return False
+    return True
 
 
 if __name__ == '__main__':
@@ -114,16 +131,17 @@ if __name__ == '__main__':
 
     # Processing of the second parameter - goal
     goal_string = params_from_cmd[2]
+    goal = None
     if goal_string == "spk":
-        goal = goal_enum.spk
+        goal = GoalEnum.spk
     elif goal_string == "wam":
-        goal = goal_enum.wam
+        goal = GoalEnum.wam
     elif goal_string == "ddg":
-        goal = goal_enum.ddg
+        goal = GoalEnum.ddg
     elif goal_string == "lnorm":
-        goal = goal_enum.lnorm
+        goal = GoalEnum.lnorm
     elif goal_string == "jacobi":
-        goal = goal_enum.jacobi
+        goal = GoalEnum.jacobi
     else:
         # Invalid value of the second parameter
         print("Invalid Input!")
@@ -140,6 +158,11 @@ if __name__ == '__main__':
     N = len(data)
     d = len(data[0])
 
+    if N == 0 or d == 0:
+        # The input file is empty
+        print("Invalid Input!")
+        exit(1)
+
     if k >= N:
         # Invalid value of the first parameter - the number of clusters 
         # should be smaller then the number of data points.
@@ -147,33 +170,44 @@ if __name__ == '__main__':
         exit(1)
 
     # Activate the wanted goal function using the CAPI file.
-    if goal == goal_enum.spk:
+    if goal == GoalEnum.spk:
         # Perform full spectral kmeans
-        jacobi_mat = myspkmeans.fit(np.ndarray.tolist(data), N, d, k, \
-            jacobi_epsilon, max_rotations, None, goal_enum.jacobi)
+        jacobi_mat = myspkmeans.fit(np.ndarray.tolist(data),
+                                    N, d, k, jacobi_epsilon, max_rotations,
+                                    None, GoalEnum.jacobi)
         mu_indices, mu = k_means_pp(k, jacobi_mat)
-        found_centroids = myspkmeans.fit_kmeans(np.ndarray.tolist(data), \
-            N, d, k, kmeans_epsilon, max_iterations, np.ndarray.tolist(mu), goal_enum.kmeans)
+        found_centroids = myspkmeans.fit(
+            np.ndarray.tolist(data), N, d, k, kmeans_epsilon,
+            max_iterations, np.ndarray.tolist(mu), GoalEnum.kmeans)
         if not found_centroids:
             exit(1)
         output_spk(mu_indices, found_centroids)
     else:
-        if goal == goal_enum.wam:
+        mat = None
+        if goal == GoalEnum.wam:
             # Calculate and output the Weighted Adjacency Matrix
-            mat = myspkmeans.fit(np.ndarray.tolist(data), N, d, k, \
-                jacobi_epsilon, max_rotations, None, goal_enum.wam)
-        elif goal == goal_enum.ddg:
+            mat = myspkmeans.fit(np.ndarray.tolist(data),
+                                 N, d, k, jacobi_epsilon, max_rotations,
+                                 None, GoalEnum.wam)
+        elif goal == GoalEnum.ddg:
             # Calculate and output the Diagonal Degree Matrix
-            mat = myspkmeans.fit(np.ndarray.tolist(data), N, d, k, \
-                jacobi_epsilon, max_rotations, None, goal_enum.ddg)
-        elif goal == goal_enum.lnorm:
+            mat = myspkmeans.fit(np.ndarray.tolist(data),
+                                 N, d, k, jacobi_epsilon, max_rotations,
+                                 None, GoalEnum.ddg)
+        elif goal == GoalEnum.lnorm:
             # Calculate and output the Normalized Graph Laplacian
-            mat = myspkmeans.fit(np.ndarray.tolist(data), N, d, k, \
-                jacobi_epsilon, max_rotations, None, goal_enum.lnorm)
-        elif goal == goal_enum.jacobi:
+            mat = myspkmeans.fit(np.ndarray.tolist(data),
+                                 N, d, k, jacobi_epsilon, max_rotations,
+                                 None, GoalEnum.lnorm)
+        elif goal == GoalEnum.jacobi:
             # Calculate and output the eigenvalues and eigenvectors
-            mat = myspkmeans.fit(np.ndarray.tolist(data), N, d, k, \
-                jacobi_epsilon, max_rotations, None, goal_enum.jacobi)
+            if not jacobi_input_validation(data):
+                # Invalid jacobi matrix
+                print("Invalid Input!")
+                exit(1)
+            mat = myspkmeans.fit(np.ndarray.tolist(data),
+                                 N, d, k, jacobi_epsilon, max_rotations,
+                                 None, GoalEnum.jacobi)
         else:
             # Invalid goal value
             print("An Error Has Occurred")
