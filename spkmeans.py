@@ -96,7 +96,7 @@ def output_other_than_spk(matrix):
 # This function receives a matrix, and checks if it is a symmetric matrix.
 def jacobi_input_validation(input_mat):
     for i in range(len(jacobi_mat)):
-        for j in range(i+1, len(input_mat)):
+        for j in range(i + 1, len(input_mat)):
             # An asymmetry is detected.
             if input_mat[i][j] != input_mat[j][i]:
                 return False
@@ -172,13 +172,16 @@ if __name__ == '__main__':
     # Activate the wanted goal function using the CAPI file.
     if goal == GoalEnum.spk:
         # Perform full spectral kmeans
-        jacobi_mat = myspkmeans.fit(np.ndarray.tolist(data),
+        lnorm_mat = myspkmeans.fit(np.ndarray.tolist(data),
+                                   N, d, k, jacobi_epsilon, max_rotations,
+                                   None, GoalEnum.lnorm)
+        jacobi_mat = myspkmeans.fit(np.ndarray.tolist(lnorm_mat),
                                     N, d, k, jacobi_epsilon, max_rotations,
                                     None, GoalEnum.jacobi)
         mu_indices, mu = k_means_pp(k, jacobi_mat)
         found_centroids = myspkmeans.fit(
             np.ndarray.tolist(data), N, d, k, kmeans_epsilon,
-            max_iterations, np.ndarray.tolist(mu), GoalEnum.kmeans)
+            max_iterations, np.ndarray.tolist(mu), GoalEnum.spk)
         if not found_centroids:
             exit(1)
         output_spk(mu_indices, found_centroids)

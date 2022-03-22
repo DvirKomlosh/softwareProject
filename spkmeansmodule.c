@@ -1,4 +1,5 @@
 #define PY_SSIZE_T_CLEAN
+#include "spkmeans.h"
 #include <Python.h>
 #include <stdio.h>
 #include <assert.h>
@@ -12,7 +13,7 @@ enum goal_enum {
     ddg = 3,
     lnorm = 4,
     jacobi = 5,
-    kmeans = 6
+    kmeans = 6,
 };
 
 PyMODINIT_FUNC PyInit_mykmeanssp(void);
@@ -65,22 +66,22 @@ static PyObject* fit(PyObject *self, PyObject *args)
     int initialize_i;
     int i, j;
     PyObject* po_primary_i;
-    PyObject* po_additional_i;
+    PyObject* po_mu_arr_i;
     PyObject* po_primary_i_j;
-    PyObject* po_additional_i_j;
+    PyObject* po_mu_arr_i_j;
     PyObject* po_mat_i;
 
     int n, d, k, max, goal_num;
     double EPSILON;
     PyObject* po_primary;
     double** primary;
-    PyObject* po_additional;
-    double** additional;
+    PyObject* po_mu_arr;
+    double** mu_arr;
     PyObject* po_mat;
 
     /* Receive the useful information from the user */
     if (!PyArg_ParseTuple(args, "OiiidiOi", &po_primary, &n, &d, &k, 
-    &EPSILON, &max, &po_additional, &goal_num))
+    &EPSILON, &max, &po_mu_arr, &goal_num))
     {
         printf("An Error Has Occurred\n");
         return Py_BuildValue("");
@@ -91,29 +92,26 @@ static PyObject* fit(PyObject *self, PyObject *args)
     else if (goal == 3) goal_enum = ddg;
     else if (goal == 4) goal_enum = lnorm;
     else if (goal == 5) goal_enum = jacobi;
-    else goal_enum = kmeans; 
+    else if (goal == 6) goal_enum = kmeans;
+    else
+    {
+        /* Unexpected goal value */
+        printf("An Error Has Occurred\n");
+        return Py_BuildValue("");}
+    }
 
     /* Transform the given PyObjects to double matrices */
-    primary = (double **)malloc(n * sizeof(double *)); 
-    additional = (double **)malloc(k * sizeof(double *));
-    if (!primary || !additional)
+    primary = (double **)malloc(n * sizeof(double *));
+    if (!primary)
     {
         printf("An Error Has Occurred\n");
         return Py_BuildValue("");
     }
+
     for (initialize_i = 0; initialize_i < n; initialize_i++)
     {
         primary[initialize_i] = (double *)malloc(d * sizeof(double));
         if (!primary[initialize_i])
-        {
-            printf("An Error Has Occurred\n");
-            return Py_BuildValue("");
-        }
-    }
-    for (initialize_i = 0; initialize_i < k; initialize_i++)
-    {
-        additional[initialize_i] = (double *)malloc(d * sizeof(double));
-        if (!additional[initialize_i])
         {
             printf("An Error Has Occurred\n");
             return Py_BuildValue("");
@@ -130,20 +128,48 @@ static PyObject* fit(PyObject *self, PyObject *args)
         }
     }
 
-    for (i = 0; i < k; i++)
+    /* Fix from here, add kmeans */
+    if (goal_enum == spk)
     {
-        po_additional_i = PyList_GetItem(po_additional, i);
-        for (j = 0; j < d; j++)
+        mu_arr = (double **)malloc(k * sizeof(double *));
+        if (!mu_arr)
         {
-            po_additional_i_j = PyList_GetItem(po_additional_i, j);
-            additional[i][j] = (double)PyFloat_AsDouble(po_additional_i_j);
+            printf("An Error Has Occurred\n");
+            return Py_BuildValue("");
+        }
+
+        for (initialize_i = 0; initialize_i < k; initialize_i++)
+        {
+            mu_arr[initialize_i] = (double *)malloc(d * sizeof(double));
+            if (!mu_arr[initialize_i])
+            {
+                printf("An Error Has Occurred\n");
+                return Py_BuildValue("");
+            }
+        }
+
+        for (i = 0; i < k; i++)
+        {
+            po_mu_arr_i = PyList_GetItem(po_mu_arr, i);
+            for (j = 0; j < d; j++)
+            {
+                po_mu_arr_i_j = PyList_GetItem(po_mu_arr_i, j);
+                mu_arr[i][j] = (double)PyFloat_AsDouble(po_mu_arr_i_j);
+            }
         }
     }
 
-    /* Here we need to call the spkmeans.c processing function */
+    /* Activate the main C function */
+    returned_mat = execute_goal(primary, n, d, &k, EPSILON, max, mu_arr, goal);
 
-    /* Activate the KMeans() function */
-    Kmeans(datapoints, centroids, n, d, k, max_iter, EPSILON);
+    if (goal_enum == jacobi)
+    {
+        /* Return  */
+    }
+    else
+    {
+        /* Return  */
+    }
 
     /* Transform the centroid matrix to a PyObject (PyList) */
     po_final_centroids = PyList_New(k);
@@ -172,7 +198,3 @@ static PyObject* fit(PyObject *self, PyObject *args)
 
     return po_final_centroids;
 }
-
-
-
-
