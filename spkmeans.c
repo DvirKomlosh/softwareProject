@@ -7,6 +7,11 @@
 
 #define sign(x) ((x >= 0) - (x < 0))
 
+#define JAC_MAX_ITER 100
+#define K_MAX_ITER 300
+#define JAC_EPS 0.00001
+#define K_EPS 0
+
 int main(int argc, char *argv[]) // to do
 {
 }
@@ -18,21 +23,47 @@ int main(int argc, char *argv[]) // to do
 // ddg 3
 // lnorm 4
 // jacobi 5
+// kmeans 6
 //------------------------------------------------
 
-double **execute_goal(double **data, int n, int d, int *k, double epsilon, int max_iter, double **mu, int goal)
+double *sort(double *array, int size)
 {
+    double temp;
+    double *sorted = allocate_double_array(size);
 
-    if (goal == 5)
+    for (int i = 0; i < size; i++)
     {
-        double **jacobi = jacobi(data, n, max_iter, epsilon);
-        *k = eigen_gap(jacobi[0], n);
-        return jacobi;
+        sorted[i] = array[i];
     }
 
+    for (int i = 0; i < size; ++i)
+    {
+        for (int j = i + 1; j < size; ++j)
+        {
+            if (sorted[i] > sorted[j])
+            {
+                temp = sorted[i];
+                sorted[i] = sorted[j];
+                sorted[j] = temp;
+            }
+        }
+    }
+
+    return sorted;
+}
+
+double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal)
+{
+    double *sorted_eigenvals;
+
+    if (goal == 5)
+        return jacobi(data, n, JAC_MAX_ITER, JAC_EPS);
+
     if (goal == 1)
-        kmeans(data, mu, n, d, *k, max_iter, epsilon);
-    return mu;
+    {
+        kmeans(data, mu, n, d, *k, K_MAX_ITER, K_EPS);
+        return mu;
+    }
 
     double **wam = wam(data, n, d);
     if (goal == 2)
@@ -40,17 +71,31 @@ double **execute_goal(double **data, int n, int d, int *k, double epsilon, int m
 
     double *ddg = ddg(wam, n);
     if (goal == 3)
-        ddg = diag_to_mat() return ddg;
+        ddg = diag_to_mat();
+    return ddg;
 
     double **lnorm = lnorm(wam, ddg, n);
     if (goal == 4)
         return lnorm;
+
+    if (goal == 6)
+    {
+        double **jacobi = jacobi(lnorm, n, JAC_MAX_ITER, JAC_EPS);
+        sorted_eigenvals = sorted(jacobi[0], n);
+        *k = eigen_gap(sorted_eigenvals, n);
+        T = create_T(jacobi, sorted_eigenvals, *k);
+        return T;
+    }
+}
+
+double **create_T(double **jacobi, double *sorted_eigenvals, int k)
+{
 }
 
 double **allocate_double_matrix(int length, int width)
 {
     double **matrix = (double **)malloc(length * sizeof(double *));
-    for (i = 0; i < n; i++)
+    for (i = 0; i < length; i++)
     {
         wam[i] = allocate_double_array(width);
     }
@@ -69,9 +114,9 @@ double **wam(double **data, int n, int d)
     int i, j;
 
     // allocating space for wam:
-    double **wam = allocate_double_matrix(n, n)
+    double **wam = allocate_double_matrix(n, n);
 
-        for (i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
     {
         for (j = 0; j < n; j++)
         {
@@ -200,7 +245,7 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
     double c, s, offA;
     int i, j, current_iter = 0;
 
-    double **V = allocate_double_matrix(n + 1, n);
+    double **V = allocate_double_matrix(n, n);
 
     set_to_identity(V);
     offA = off_diag_squared(A);
@@ -216,20 +261,25 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
             convarged = true;
     }
 
-    double *eigen_values = allocate_double_array(n);
+    double **eigens = allocate_double_matrix(n + 1, n);
 
+    // copies the eigenvalues and eigenvectors to the returned matrix
     for (i = 0; i < n; i++)
     {
-        eigen_values[i] = A[i][i];
+        eigens[0][i] = A[i][i];
+    }
+    for (i = 0; i < n; i++)
+    {
+        for (j = 0; j < n; i++)
+        {
+            eigens[i + 1][j] = V[i][j];
+        }
     }
 
+    free(V);
     free(A);
 
-    // should return eigenvalues first, then V, to print,
-    // might move the allocation of both outside, and get pointers to them from args.
-
-    // A's diag should have all of the eigenvalues, V's rows should be the correspondant vectors.
-    // couldn't understand how to output.
+    return eigens;
 }
 
 // gets sorted list of eigen values
@@ -351,44 +401,3 @@ double dist_squared(double *x1, double *x2, int dim)
     }
     return sqrt(total);
 }
-
-// void matrix_vector_multiplication(double *vector, double **matrix, double *res, int dim)
-// {
-//     int i, j;
-
-//     for (i = 0; i < dim; i++)
-//     {
-//         res[i] = 0;
-//         for (j = 0; j < dim; j++)
-//         {
-//             res[i] += matrix[i][j] * vector[j];
-//         }
-//     }
-// }
-
-// void matrix_multiplication(double **mat1, double **mat2, double **res, int dim)
-// {
-//     int i;
-//     double **res = (double **)malloc(dim * sizeof(*double));
-//     for (i = 0; i < dim; i++)
-//     {
-//         matrix_vector_multiplication(mat1[i], mat2, res[i], dim);
-//     }
-// }
-
-// void one_over_sqrt_matrix(double **matrix, int dim)
-// {
-//     int i;
-//     double **res = (double **)malloc(n * sizeof(double *));
-//     for (i = 0; i < n; i++)
-//     {
-//         res[i] = (double *)malloc(n * sizeof(double));
-//     }
-
-//     for (i = 0; i < dim; i++)
-//     {
-//         res[i][i] = 1 / sqrt(res[i][i]);
-//     }
-
-//     return res;
-// }
