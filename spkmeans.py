@@ -95,7 +95,7 @@ def output_other_than_spk(matrix):
 
 # This function receives a matrix, and checks if it is a symmetric matrix.
 def jacobi_input_validation(input_mat):
-    for i in range(len(jacobi_mat)):
+    for i in range(len(input_mat)):
         for j in range(i + 1, len(input_mat)):
             # An asymmetry is detected.
             if input_mat[i][j] != input_mat[j][i]:
@@ -111,9 +111,10 @@ if __name__ == '__main__':
         print("Invalid Input!")
         exit(1)
 
+    # Pass manually and not as parameters!
     max_rotations = 100
     max_iterations = 300
-    jacobi_epsilon = 10 ** -15
+    jacobi_epsilon = 10 ** -5
     kmeans_epsilon = 0
 
     # Processing of the first parameter - k
@@ -172,16 +173,11 @@ if __name__ == '__main__':
     # Activate the wanted goal function using the CAPI file.
     if goal == GoalEnum.spk:
         # Perform full spectral kmeans
-        lnorm_mat = myspkmeans.fit(np.ndarray.tolist(data),
-                                   N, d, k, jacobi_epsilon, max_rotations,
-                                   None, GoalEnum.lnorm)
-        jacobi_mat = myspkmeans.fit(np.ndarray.tolist(lnorm_mat),
-                                    N, d, k, jacobi_epsilon, max_rotations,
-                                    None, GoalEnum.jacobi)
-        mu_indices, mu = k_means_pp(k, jacobi_mat)
-        found_centroids = myspkmeans.fit(
-            np.ndarray.tolist(data), N, d, k, kmeans_epsilon,
-            max_iterations, np.ndarray.tolist(mu), GoalEnum.spk)
+        T = myspkmeans.fit(np.ndarray.tolist(data), 
+            N, d, k, None, GoalEnum.kmeans)
+        mu_indices, mu = k_means_pp(k, T)
+        found_centroids = myspkmeans.fit(np.ndarray.tolist(data), 
+            N, d, k, np.ndarray.tolist(mu), GoalEnum.spk)
         if not found_centroids:
             exit(1)
         output_spk(mu_indices, found_centroids)
@@ -189,28 +185,24 @@ if __name__ == '__main__':
         mat = None
         if goal == GoalEnum.wam:
             # Calculate and output the Weighted Adjacency Matrix
-            mat = myspkmeans.fit(np.ndarray.tolist(data),
-                                 N, d, k, jacobi_epsilon, max_rotations,
-                                 None, GoalEnum.wam)
+            mat = myspkmeans.fit(np.ndarray.tolist(data), 
+                N, d, k, None, GoalEnum.wam)
         elif goal == GoalEnum.ddg:
             # Calculate and output the Diagonal Degree Matrix
             mat = myspkmeans.fit(np.ndarray.tolist(data),
-                                 N, d, k, jacobi_epsilon, max_rotations,
-                                 None, GoalEnum.ddg)
+                N, d, k, None, GoalEnum.ddg)
         elif goal == GoalEnum.lnorm:
             # Calculate and output the Normalized Graph Laplacian
             mat = myspkmeans.fit(np.ndarray.tolist(data),
-                                 N, d, k, jacobi_epsilon, max_rotations,
-                                 None, GoalEnum.lnorm)
+                N, d, k, None, GoalEnum.lnorm)
         elif goal == GoalEnum.jacobi:
             # Calculate and output the eigenvalues and eigenvectors
             if not jacobi_input_validation(data):
                 # Invalid jacobi matrix
                 print("Invalid Input!")
                 exit(1)
-            mat = myspkmeans.fit(np.ndarray.tolist(data),
-                                 N, d, k, jacobi_epsilon, max_rotations,
-                                 None, GoalEnum.jacobi)
+            mat = myspkmeans.fit(np.ndarray.tolist(data), 
+                N, d, k, None, GoalEnum.jacobi)
         else:
             # Invalid goal value
             print("An Error Has Occurred")

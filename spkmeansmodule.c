@@ -69,19 +69,19 @@ static PyObject* fit(PyObject *self, PyObject *args)
     PyObject* po_mu_arr_i;
     PyObject* po_primary_i_j;
     PyObject* po_mu_arr_i_j;
-    PyObject* po_mat_i;
+    PyObject* po_return_mat_i;
 
-    int n, d, k, max, goal_num;
-    double EPSILON;
+    int n, d, k, goal_num;
     PyObject* po_primary;
     double** primary;
     PyObject* po_mu_arr;
     double** mu_arr;
-    PyObject* po_mat;
+    PyObject* po_return_mat;
+    double** return_mat;
 
     /* Receive the useful information from the user */
-    if (!PyArg_ParseTuple(args, "OiiidiOi", &po_primary, &n, &d, &k, 
-    &EPSILON, &max, &po_mu_arr, &goal_num))
+    if (!PyArg_ParseTuple(args, "OiiiOi", &po_primary, &n, &d, &k, 
+    &po_mu_arr, &goal_num))
     {
         printf("An Error Has Occurred\n");
         return Py_BuildValue("");
@@ -128,7 +128,6 @@ static PyObject* fit(PyObject *self, PyObject *args)
         }
     }
 
-    /* Fix from here, add kmeans */
     if (goal_enum == spk)
     {
         mu_arr = (double **)malloc(k * sizeof(double *));
@@ -160,41 +159,89 @@ static PyObject* fit(PyObject *self, PyObject *args)
     }
 
     /* Activate the main C function */
-    returned_mat = execute_goal(primary, n, d, &k, EPSILON, max, mu_arr, goal);
+    returned_mat = execute_goal(primary, n, d, &k, mu_arr, goal);
 
-    if (goal_enum == jacobi)
+    /* Transform the returned matrix to a PyObject (PyList) */
+    
+    if (goal_enum == spk) po_return_mat = PyList_New(k);
+    else if (goal_enum == jacobi) po_return_mat = PyList_New(n+1);
+    else po_return_mat = PyList_New(n);
+    
+    for (i = 0; i < PyList_Size(po_return_mat); i++)
     {
-        /* Return  */
-    }
-    else
-    {
-        /* Return  */
-    }
-
-    /* Transform the centroid matrix to a PyObject (PyList) */
-    po_final_centroids = PyList_New(k);
-    for (i = 0; i < k; i++)
-    {
-        po_final_centroids_i = PyList_New(d);
-        for (j = 0; j < d; j++)
+        if (goal_enum == spk) po_return_mat_i = PyList_New(d);
+        else if (goal_enum == kmeans) po_return_mat_i = PyList_New(k);
+        else po_return_mat_i = PyList_New(n);
+        for (j = 0; j < PyList_Size(po_return_mat_i); j++)
         {
-            PyList_SetItem(po_final_centroids_i, j, 
-            Py_BuildValue("d", centroids[i][j]));
+            PyList_SetItem(po_return_mat_i, j, 
+            Py_BuildValue("d", returned_mat[i][j]));
         }
-        PyList_SetItem(po_final_centroids, i, po_final_centroids_i);
+        PyList_SetItem(po_return_mat, i, po_return_mat_i);
     }
 
     /* Free alocated memory */
     for (initialize_i = 0; initialize_i < n; initialize_i++)
     {
-        free(datapoints[initialize_i]);
+        free(primary[initialize_i]);
     }
-    for (initialize_i = 0; initialize_i < k; initialize_i++)
-    {
-        free(centroids[initialize_i]);
-    }
-    free(datapoints);
-    free(centroids);
+    free(primary);
 
-    return po_final_centroids;
+    if (goal_enum == spk)
+    {
+        for (initialize_i = 0; initialize_i < k; initialize_i++)
+        {
+            free(mu_arr[initialize_i]);
+        }
+        free(mu_arr);
+    }
+    
+    primary = (double **)malloc(n * sizeof(double *));
+    if (!primary)
+    {
+        printf("An Error Has Occurred\n");
+        return Py_BuildValue("");
+    }
+
+    for (initialize_i = 0; initialize_i < n; initialize_i++)
+    {
+        primary[initialize_i] = (double *)malloc(d * sizeof(double));
+        if (!primary[initialize_i])
+        {
+            printf("An Error Has Occurred\n");
+            return Py_BuildValue("");
+        }
+    }
+
+    if (goal_enum == spk)
+    {
+        mu_arr = (double **)malloc(k * sizeof(double *));
+        if (!mu_arr)
+        {
+            printf("An Error Has Occurred\n");
+            return Py_BuildValue("");
+        }
+
+        for (initialize_i = 0; initialize_i < k; initialize_i++)
+        {
+            mu_arr[initialize_i] = (double *)malloc(d * sizeof(double));
+            if (!mu_arr[initialize_i])
+            {
+                printf("An Error Has Occurred\n");
+                return Py_BuildValue("");
+            }
+        }
+
+        for (i = 0; i < k; i++)
+        {
+            po_mu_arr_i = PyList_GetItem(po_mu_arr, i);
+            for (j = 0; j < d; j++)
+            {
+                po_mu_arr_i_j = PyList_GetItem(po_mu_arr_i, j);
+                mu_arr[i][j] = (double)PyFloat_AsDouble(po_mu_arr_i_j);
+            }
+        }
+    }
+
+    return po_return_mat;
 }
