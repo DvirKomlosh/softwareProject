@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <stdbool.h>
 
 double *sort(double *array, int size)
 {
@@ -31,16 +32,63 @@ double *sort(double *array, int size)
     return sorted;
 }
 
-double **create_T(double **jacobi, double *sorted_eigenvals, int k)
+double **create_T(double **jacobi_mat, double *sorted_eigenvals, int k, int n)
 {
+    double **T;
+    T = create_U(jacobi_mat, sorted_eigenvals, k, n);
+    normalize(T, k, n);
+
+    return T;
+}
+
+void normalize(double **U, int k, int n)
+{
+    int i, j;
+    double norm;
+    for (j = 0; j < n; j++)
+    {
+        norm = 0;
+        for (i = 0; i < k; i++)
+        {
+            norm += U[i][j] * U[i][j];
+        }
+        norm = sqrt(norm);
+        for (i = 0; i < k; i++)
+        {
+            U[i][j] = U[i][j] / norm;
+        }
+    }
+}
+
+double **create_U(double **jacobi_mat, double *sorted_eigenvals, int k, int n)
+{
+    int i, j = -1;
+    double current_eigenvalue;
+
+    double **U = allocate_double_matrix(n, k);
+
+    for (i = 0; i < k; i++)
+    {
+        current_eigenvalue = sorted_eigenvals[i];
+        while (current_eigenvalue != jacobi_mat[0][++j])
+            ;
+        for (j = 0; j < n; j++)
+        {
+            // the first row is the eigen values, so we skip it
+            U[j][i] = jacobi_mat[j + 1][i];
+        }
+    }
+
+    return U;
 }
 
 double **allocate_double_matrix(int length, int width)
 {
+    int i;
     double **matrix = (double **)malloc(length * sizeof(double *));
     for (i = 0; i < length; i++)
     {
-        wam[i] = allocate_double_array(width);
+        matrix[i] = allocate_double_array(width);
     }
     return matrix;
 }
@@ -57,56 +105,57 @@ double **wam(double **data, int n, int d)
     int i, j;
 
     // allocating space for wam:
-    double **wam = allocate_double_matrix(n, n);
+    double **wam_mat = allocate_double_matrix(n, n);
 
     for (i = 0; i < n; i++)
     {
         for (j = 0; j < n; j++)
         {
-            wam[i][j] = exp(-dist(data[i], data[j], d) / 2.0);
+            wam_mat[i][j] = exp(-dist(data[i], data[j], d) / 2.0);
         }
     }
 
-    return wam;
+    return wam_mat;
 }
 
 // gets the wam ,n dim of matrix
 // returns the degrees diagonal matrix diagonal values
-double *ddg(double **wam, int n)
+double *ddg(double **wam_mat, int n)
 {
+    int i, j;
     // allocating space for ddg:
-    double *ddg = allocate_double_array(n);
+    double *ddg_mat = allocate_double_array(n);
 
     for (i = 0; i < n; i++)
     {
-        ddg[i] = 0;
+        ddg_mat[i] = 0;
         for (j = 0; j < n; j++)
         {
-            ddg[i] += wam[i][j];
+            ddg_mat[i] += wam_mat[i][j];
         }
     }
 
-    return ddg;
+    return ddg_mat;
 }
 
 // gets the ddg,wam and n(the dim of matrix)
 // returns lnorm matrix, destroys ddg in the process
-double **lnorm(double **wam, double *ddg, int n)
+double **lnorm(double **wam_mat, double *ddg_mat, int n)
 {
-
-    double **lnorm = allocate_double_matrix(n, n);
+    int i, j;
+    double **lnorm_mat = allocate_double_matrix(n, n);
 
     for (i = 0; i < n; i++)
     {
         for (j = 0; j < n; j++)
         {
-            lnorm[i][j] = -wam[i][j] * (1 / (sqrt(ddg[i] * ddg[j])));
+            lnorm_mat[i][j] = -wam_mat[i][j] * (1 / (sqrt(ddg_mat[i] * ddg_mat[j])));
             if (i == j)
-                lnorm[i][j] += 1;
+                lnorm_mat[i][j] += 1;
         }
     }
 
-    return lnorm;
+    return lnorm_mat;
 }
 
 void get_rotation_values(int *i, int *j, double *c, double *s, double **A, int dim)
@@ -130,7 +179,7 @@ void get_rotation_values(int *i, int *j, double *c, double *s, double **A, int d
     theta = (A[*j][*j] - A[*i][*i]) / (2 * A[*i][*j]);
     t = (sign(theta)) / (abs(theta) + sqrt(theta * theta + 1));
     c_temp = 1 / (sqrt(t * t + 1));
-    s_temp = t * c;
+    s_temp = t * (*c);
     *c = c_temp;
     *s = s_temp;
 }
@@ -141,10 +190,10 @@ void update_A(double **A, int i, int j, double c, double s, int dim)
 {
     int index;
 
-    for (index = 0; index_i < dim; index_i++)
+    for (index = 0; index < dim; index++)
     {
         A[index][i] = c * A[index][i] - s * A[index][j];
-        A[i][index] = [index][i];
+        A[i][index] = A[index][i];
         A[index][j] = c * A[index][i] + s * A[index][j];
         A[j][index] = A[index][j];
     }
@@ -157,15 +206,15 @@ void update_V(double **V, int i, int j, double c, double s, int dim)
 {
     int index;
 
-    for (index = 0; index_i < dim; index_i++)
+    for (index = 0; index < dim; index++)
     {
-        V[index][i] = c * V[index][i] - s * A[index][j];
-        V[index][j] = c * V[index][i] + s * A[index][j];
+        V[index][i] = c * V[index][i] - s * V[index][j];
+        V[index][j] = c * V[index][i] + s * V[index][j];
     }
 }
 
 // convergacne metric for Jacobi
-double off_diag_squared(double **matrix, n)
+double off_diag_squared(double **matrix, int n)
 {
     int i, j;
     double sum;
@@ -173,7 +222,7 @@ double off_diag_squared(double **matrix, n)
     {
         for (j = i + 1; j < n; j++)
         {
-            sum += 2 * A[i][j] * A[i][j];
+            sum += 2 * matrix[i][j] * matrix[i][j];
         }
     }
     return sum;
@@ -191,14 +240,14 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
     double **V = allocate_double_matrix(n, n);
 
     set_to_identity(V);
-    offA = off_diag_squared(A);
+    offA = off_diag_squared(A, n);
     while (!convarged)
     {
         get_rotation_values(A, &i, &j, &c, &s, n);
         update_A(A, i, j, c, s, n);
         update_V(V, i, j, c, s, n);
 
-        convarged = ((off_diag_squared(A) - offA) < epsilon);
+        convarged = ((off_diag_squared(A, n) - offA) < epsilon);
         current_iter++;
         if (current_iter == max_iter)
             convarged = true;
@@ -271,8 +320,8 @@ void Kmeans(double **matrix, double **mu, int n, int d, int k, int max_iter, dou
             cluster_size[i] = 0;
         }
 
-        / adding x to clusters /
-            for (i = 0; i < n; i++)
+        /* adding x to clusters */
+        for (i = 0; i < n; i++)
         {
             minimal_distance = dist(matrix[i], mu[0], d);
             curr_cluster = 0;
@@ -331,7 +380,7 @@ void Kmeans(double **matrix, double **mu, int n, int d, int k, int max_iter, dou
 
 double dist(double *x1, double *x2, int dim)
 {
-    return sqrt(dist_squared);
+    return sqrt(dist_squared(x1, x2, dim));
 }
 
 double dist_squared(double *x1, double *x2, int dim)
