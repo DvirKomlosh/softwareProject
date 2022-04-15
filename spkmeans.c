@@ -55,6 +55,95 @@ void read_matrix(FILE **input, double **matrix, double **mu, int n, int d, int k
     }
 }
 
+void print_to_output(FILE **output, double **mu, int k, int d)
+{
+    int i, j;
+
+    for (i = 0; i < k; i++)
+    {
+        for (j = 0; j < d; j++)
+        {
+            fprintf(*output, "%.4f", mu[i][j]);
+            if (j != d - 1)
+            {
+                fprintf(*output, ",");
+            }
+            else
+            {
+                fprintf(*output, "\n");
+            }
+        }
+    }
+    fclose(*output);
+}
+
+int isValidInput(int argc, char *argv[], FILE **input, FILE **output, int *k, int *max_iter)
+{
+    int no_max_iter_indent;
+    /*chceck correct number of args*/
+    if (argc != 5 && argc != 4)
+    {
+        return 0;
+    }
+
+    *k = isInt(argv[1]);
+
+    if (argc == 5)
+    {
+        no_max_iter_indent = 1;
+        *max_iter = isInt(argv[2]);
+    }
+    else
+    {
+        no_max_iter_indent = 0;
+        *max_iter = 200; /*default*/
+    }
+
+    /*check first to args are ints*/
+    if (!*k || !*max_iter)
+    {
+        return 0;
+    }
+
+    /*check if the files are "openable"*/
+    *input = fopen(argv[2 + no_max_iter_indent], "r");
+    *output = fopen(argv[3 + no_max_iter_indent], "w");
+
+    if (!*input || !*output)
+    {
+        fclose(*input);
+        fclose(*output);
+        return 0;
+    }
+    return 1;
+}
+
+int isInt(char *intStr)
+{
+    int trueInt;
+    int length = strlen(intStr);
+    int i;
+    for (i = 0; i < length; i++)
+    {
+        if (!isDigit(intStr[i]))
+            return 0;
+    }
+    trueInt = (int)strtol(intStr, (char **)NULL, 10);
+
+    if (trueInt < 1)
+    {
+        return 0;
+    }
+    return trueInt;
+}
+
+int isDigit(char c)
+{
+    if ((c >= '0') && (c <= '9'))
+        return 1;
+    return 0;
+}
+
 //------------------------------------------------
 // goal index:
 // spk 1
