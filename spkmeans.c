@@ -12,8 +12,47 @@
 #define JAC_EPS 0.00001
 #define K_EPS 0
 
-int main(int argc, char *argv[]) // to do
+// need to modify this:
+int main(int argc, char *argv[])
 {
+    int N, d, k, goal;
+    FILE *input;
+    double **output;
+
+    if (!isValidInput(argc, argv, &input, &k, &goal))
+    {
+        printf("Invalid Input!\n");
+        return 1;
+    }
+
+    data = read_matrix(input);
+
+    output = execute_goal(data, n, d, *k, **mu, goal);
+
+    return 0;
+}
+
+void read_matrix(FILE **input, double **matrix, double **mu, int n, int d, int k)
+{
+    int i, j;
+    for (i = 0; i < n; i++)
+    {
+        for (j = 0; j < d; j++)
+        {
+            if (j == d - 1)
+            {
+                fscanf(*input, "%le", &matrix[i][j]);
+            }
+            else
+            {
+                fscanf(*input, "%le,", &matrix[i][j]);
+            }
+            if (i < k)
+            {
+                mu[i][j] = matrix[i][j];
+            }
+        }
+    }
 }
 
 //------------------------------------------------
