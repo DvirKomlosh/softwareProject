@@ -1,10 +1,12 @@
-
+#pragma once
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <stdbool.h>
+
+#define sign(x) ((x >= 0) - (x < 0))
 
 double *sort(double *array, int size)
 {
@@ -228,6 +230,18 @@ double off_diag_squared(double **matrix, int n)
     return sum;
 }
 
+void set_to_identity(double **V, int n)
+{
+    int i, j;
+    for (i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            V[i][j] = (i == j);
+        }
+    }
+}
+
 // returns the eigenvalues and eigenvectors of the matrix A,
 // n dim of matrix, epsilon used to check convergence
 // changes A in the process
@@ -239,11 +253,11 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
 
     double **V = allocate_double_matrix(n, n);
 
-    set_to_identity(V);
+    set_to_identity(V, n);
     offA = off_diag_squared(A, n);
     while (!convarged)
     {
-        get_rotation_values(A, &i, &j, &c, &s, n);
+        get_rotation_values(&i, &j, &c, &s, A, n);
         update_A(A, i, j, c, s, n);
         update_V(V, i, j, c, s, n);
 
@@ -297,7 +311,7 @@ void Kmeans(double **matrix, double **mu, int n, int d, int k, int max_iter, dou
     int curr_cluster, iter, j, i;
     int convergacne = 0;
     int *cluster_size = (int *)malloc(k * sizeof(int));
-    double **mu_next = (double *)malloc(k * sizeof(double *));
+    double **mu_next = (double **)malloc(k * sizeof(double *));
 
     for (i = 0; i < k; i++)
     {
