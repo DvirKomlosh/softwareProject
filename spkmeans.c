@@ -12,27 +12,35 @@
 #define JAC_EPS 0.00001
 #define K_EPS 0
 
-// need to modify this:
+// TODO: need to modify this:
 int main(int argc, char *argv[])
 {
-    int N, d, k, goal;
+    int n, d, *k, goal;
     FILE *input;
-    double **output;
+    double **data, **output;
+    double **mu; // placeholder pointer, we dont use it from the c
 
-    if (!isValidInput(argc, argv, &input, &k, &goal))
+    // check invalid input
+    if (!isValidInput(argc, argv, &input, &goal))
     {
         printf("Invalid Input!\n");
         return 1;
     }
 
-    data = read_matrix(input);
+    get_sizes(&input, &n, &d);
 
-    output = execute_goal(data, n, d, *k, **mu, goal);
+    // TODO: check n=d incase jacobi
+
+    data = allocate_double_array(n, d);
+    read_matrix(input, data, n, d);
+    output = execute_goal(data, n, d, k, mu, goal);
+
+    // TODO: print output, notice difference between goal = jacobi and the others
 
     return 0;
 }
 
-void read_matrix(FILE **input, double **matrix, double **mu, int n, int d, int k)
+void read_matrix(FILE **input, double **matrix, int n, int d)
 {
     int i, j;
     for (i = 0; i < n; i++)
@@ -46,10 +54,6 @@ void read_matrix(FILE **input, double **matrix, double **mu, int n, int d, int k
             else
             {
                 fscanf(*input, "%le,", &matrix[i][j]);
-            }
-            if (i < k)
-            {
-                mu[i][j] = matrix[i][j];
             }
         }
     }
@@ -77,45 +81,16 @@ void print_to_output(FILE **output, double **mu, int k, int d)
     fclose(*output);
 }
 
-int isValidInput(int argc, char *argv[], FILE **input, FILE **output, int *k, int *max_iter)
+// TODO:
+int isValidInput(int argc, char *argv[], FILE **input, int *max_iter)
 {
-    int no_max_iter_indent;
-    /*chceck correct number of args*/
-    if (argc != 5 && argc != 4)
-    {
-        return 0;
-    }
+    // can be massively copied from 2nd ex
 
-    *k = isInt(argv[1]);
+    // check if there are 2 args
 
-    if (argc == 5)
-    {
-        no_max_iter_indent = 1;
-        *max_iter = isInt(argv[2]);
-    }
-    else
-    {
-        no_max_iter_indent = 0;
-        *max_iter = 200; /*default*/
-    }
+    // first arg should be the goal, normal pharsering on words
 
-    /*check first to args are ints*/
-    if (!*k || !*max_iter)
-    {
-        return 0;
-    }
-
-    /*check if the files are "openable"*/
-    *input = fopen(argv[2 + no_max_iter_indent], "r");
-    *output = fopen(argv[3 + no_max_iter_indent], "w");
-
-    if (!*input || !*output)
-    {
-        fclose(*input);
-        fclose(*output);
-        return 0;
-    }
-    return 1;
+    // second arg is the file name, check if openable
 }
 
 int isInt(char *intStr)
