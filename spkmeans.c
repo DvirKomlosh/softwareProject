@@ -1,3 +1,5 @@
+#include "spkmeans.h"
+#include "algorithm.c"
 
 #include <stdio.h>
 #include <assert.h>
@@ -5,7 +7,7 @@
 #include <string.h>
 #include <math.h>
 
-#define sign(x) ((x >= 0) - (x < 0))
+#define  _POSIX_C_SOURCE 200809L
 
 #define JAC_MAX_ITER 100
 #define K_MAX_ITER 300
@@ -15,7 +17,9 @@
 // TODO: need to modify this:
 int main(int argc, char *argv[])
 {
-    int n, d, *k, goal;
+    int n, d;
+    int k = -1; /* Placeholder variable, as it's not used in a goal other than spk and kmeans. */
+    enum goal_enum goal; 
     FILE *input;
     double **data, **output;
     double **mu; // placeholder pointer, we dont use it from the c
@@ -28,12 +32,17 @@ int main(int argc, char *argv[])
     }
 
     get_sizes(&input, &n, &d);
+    data = allocate_double_matrix(n, d);
+    read_matrix(&input, data, n, d);
 
-    // TODO: check n=d incase jacobi
+    if (goal == e_jacobi && !check_symmetry(data, n, d))
+    {
+        /* Isymmetric matrix given for Jacobi */
+        printf("Invalid Input!\n");
+        return 1;
+    }
 
-    data = allocate_double_array(n, d);
-    read_matrix(input, data, n, d);
-    output = execute_goal(data, n, d, k, mu, goal);
+    output = execute_goal(data, n, d, &k, mu, goal);
 
     // TODO: print output, notice difference between goal = jacobi and the others
 
@@ -81,16 +90,73 @@ void print_to_output(FILE **output, double **mu, int k, int d)
     fclose(*output);
 }
 
-// TODO:
-int isValidInput(int argc, char *argv[], FILE **input, int *max_iter)
+int isValidInput(int argc, char *argv[], FILE **input, enum goal_enum* goal)
 {
-    // can be massively copied from 2nd ex
+    if (argc != 3)
+    {
+        /* Invalid amount of parameters */
+        printf("Invalid Input!\n");
+        return 0;
+    }
 
-    // check if there are 2 args
+    char* goal_string = argv[1];
+    if (goal_string == "wam") *goal = e_wam;
+    else if (goal_string == "ddg") *goal = e_ddg;
+    else if (goal_string == "lnorm") *goal = e_lnorm;
+    else if (goal_string == "jacobi") *goal = e_jacobi;
+    else
+    {
+        /* Invalid value of the first parameter */
+        printf("Invalid Input!\n");
+        return 0;       
+    }
 
-    // first arg should be the goal, normal pharsering on words
+    char* filename = argv[2];
+    char *suffix = strrchr(filename, '.');
+    if (suffix && (!strcmp(suffix, ".csv") || !strcmp(suffix, ".txt")))
+    *input = fopen(filename, "r");
+    if (*input == NULL)
+    {
+        /* Unopenable file */
+        printf("Invalid Input!\n");
+        return 0;
+    }
+    return 1;
+}
 
-    // second arg is the file name, check if openable
+void get_sizes(FILE** input, int* n, int* d)
+{
+    char* lineptr;
+    int line_read = 1;
+    n = 0;
+    while (line_read)
+    {
+        lineptr = NULL;
+        if (fscanf(*input, "%[^\n]", lineptr) == 0)
+        {
+            line_read = 0;
+            *d = 1;
+            for (int i = 0; i < strlen(lineptr); i++)
+            {
+                if (lineptr[i] == ',') d += 1;
+            }
+        }
+        n += 1;
+    }
+    fseek(*input, 0, SEEK_SET);
+}
+
+int check_symmetry(double **data, int n, int d)
+{
+    if (n != d) return 0;
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = i; j < d; j++)
+        {
+            if (data[i][j] != data[j][i]) return 1;
+        }
+    }
+    return 0;
 }
 
 int isInt(char *intStr)
@@ -138,29 +204,29 @@ double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal
 
     if (goal == 1)
     {
-        kmeans(data, mu, n, d, *k, K_MAX_ITER, K_EPS);
+        Kmeans(data, mu, n, d, *k, K_MAX_ITER, K_EPS);
         return mu;
     }
 
-    double **wam = wam(data, n, d);
-    if (goal == 2)
-        return wam;
+    double **wam_result = wam(data, n, d);
+    if (goal == e_wam)
+        return wam_result;
 
-    double *ddg = ddg(wam, n);
-    if (goal == 3)
-        ddg = diag_to_mat();
-    return ddg;
+    double *ddg_result = ddg(wam_result, n);
+    if (goal == e_ddg)
+        ddg_result = diag_to_mat();
+    return ddg_result;
 
-    double **lnorm = lnorm(wam, ddg, n);
-    if (goal == 4)
-        return lnorm;
+    double **lnorm_result = lnorm(wam_result, ddg_result, n);
+    if (goal == e_lnorm)
+        return lnorm_result;
 
     if (goal == 6)
     {
-        double **jacobi = jacobi(lnorm, n, JAC_MAX_ITER, JAC_EPS);
-        sorted_eigenvals = sorted(jacobi[0], n);
+        double **jacobi_result = jacobi(lnorm_result, n, JAC_MAX_ITER, JAC_EPS);
+        sorted_eigenvals = sort(jacobi_result[0], n);
         *k = eigen_gap(sorted_eigenvals, n);
-        T = create_T(jacobi, sorted_eigenvals, *k);
+        double** T = create_T(jacobi_result, sorted_eigenvals, *k, n);
         return T;
     }
 }
