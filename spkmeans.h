@@ -8,7 +8,7 @@ enum goal_enum
     e_ddg = 3,
     e_lnorm = 4,
     e_jacobi = 5,
-    e_kmeans = 6,
+    e_kmeans = 6
 };
 
 /* Functions from algorithm.c */

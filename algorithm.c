@@ -35,15 +35,16 @@ double *sort(double *array, int size)
 {
     double temp;
     double *sorted = allocate_double_array(size);
+    int i, j;
 
-    for (int i = 0; i < size; i++)
+    for (i = 0; i < size; i++)
     {
         sorted[i] = array[i];
     }
 
-    for (int i = 0; i < size; ++i)
+    for (i = 0; i < size; ++i)
     {
-        for (int j = i + 1; j < size; ++j)
+        for (j = i + 1; j < size; ++j)
         {
             if (sorted[i] > sorted[j])
             {
@@ -99,7 +100,7 @@ double **create_U(double **jacobi_mat, double *sorted_eigenvals, int k, int n)
             ;
         for (j = 0; j < n; j++)
         {
-            // the first row is the eigen values, so we skip it
+            /* the first row is the eigen values, so we skip it*/
             U[j][i] = jacobi_mat[j + 1][i];
         }
     }
@@ -123,13 +124,13 @@ double *allocate_double_array(int dim)
     return (double *)malloc(dim * sizeof(double));
 }
 
-// gets the data points and n,d - the dim of the matrix,
-// returns the weighted matrix
+/* gets the data points and n,d - the dim of the matrix,
+   returns the weighted matrix */
 double **wam(double **data, int n, int d)
 {
     int i, j;
 
-    // allocating space for wam:
+    /* allocating space for wam:*/
     double **wam_mat = allocate_double_matrix(n, n);
 
     for (i = 0; i < n; i++)
@@ -143,12 +144,12 @@ double **wam(double **data, int n, int d)
     return wam_mat;
 }
 
-// gets the wam ,n dim of matrix
-// returns the degrees diagonal matrix diagonal values
+/* gets the wam ,n dim of matrix
+   returns the degrees diagonal matrix diagonal values*/
 double *ddg(double **wam_mat, int n)
 {
     int i, j;
-    // allocating space for ddg:
+    /* allocating space for ddg: */
     double *ddg_mat = allocate_double_array(n);
 
     for (i = 0; i < n; i++)
@@ -163,8 +164,8 @@ double *ddg(double **wam_mat, int n)
     return ddg_mat;
 }
 
-// gets the ddg,wam and n(the dim of matrix)
-// returns lnorm matrix, destroys ddg in the process
+/* gets the ddg,wam and n(the dim of matrix)
+   returns lnorm matrix, destroys ddg in the process*/
 double **lnorm(double **wam_mat, double *ddg_diag, int n)
 {
     int i, j;
@@ -192,25 +193,25 @@ void get_rotation_values(int *i, int *j, double *c, double *s, double **A, int d
     {
         for (index_j = index_i + 1; index_j < dim; index_j++)
         {
-            if (abs(A[index_i][index_j]) > max_off_diag)
+            if (fabs(A[index_i][index_j]) > max_off_diag)
             {
                 *i = index_i;
                 *j = index_j;
-                max_off_diag = abs(A[index_i][index_j]);
+                max_off_diag = fabs(A[index_i][index_j]);
             }
         }
     }
 
     theta = (A[*j][*j] - A[*i][*i]) / (2 * A[*i][*j]);
-    t = (sign(theta)) / (abs(theta) + sqrt(theta * theta + 1));
+    t = (sign(theta)) / (fabs(theta) + sqrt(theta * theta + 1));
     c_temp = 1 / (sqrt(t * t + 1));
     s_temp = t * (*c);
     *c = c_temp;
     *s = s_temp;
 }
 
-// changes A to A':
-// used in jacobi
+/* changes A to A':
+   used in jacobi */
 void update_A(double **A, int i, int j, double c, double s, int dim)
 {
     int index;
@@ -226,7 +227,7 @@ void update_A(double **A, int i, int j, double c, double s, int dim)
     A[j][j] = s * s * A[i][i] + c * c * A[j][j] + 2 * s * c * A[i][j];
 }
 
-// updates V , used in jacobi
+/* updates V , used in jacobi */
 void update_V(double **V, int i, int j, double c, double s, int dim)
 {
     int index;
@@ -238,7 +239,7 @@ void update_V(double **V, int i, int j, double c, double s, int dim)
     }
 }
 
-// convergacne metric for Jacobi
+/* convergacne metric for Jacobi */
 double off_diag_squared(double **matrix, int n)
 {
     int i, j;
@@ -265,14 +266,15 @@ void set_to_identity(double **V, int n)
     }
 }
 
-// returns the eigenvalues and eigenvectors of the matrix A,
-// n dim of matrix, epsilon used to check convergence
-// changes A in the process
+/* returns the eigenvalues and eigenvectors of the matrix A,
+   n dim of matrix, epsilon used to check convergence
+   changes A in the process */
 double **jacobi(double **A, int n, int max_iter, double epsilon)
 {
     bool convarged = false;
     double c, s, offA;
     int i, j, current_iter = 0;
+    double **eigens;
 
     double **V = allocate_double_matrix(n, n);
 
@@ -290,9 +292,9 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
             convarged = true;
     }
 
-    double **eigens = allocate_double_matrix(n + 1, n);
+    eigens = allocate_double_matrix(n + 1, n);
 
-    // copies the eigenvalues and eigenvectors to the returned matrix
+    /* copies the eigenvalues and eigenvectors to the returned matrix */
     for (i = 0; i < n; i++)
     {
         eigens[0][i] = A[i][i];
@@ -328,17 +330,17 @@ double **diag_to_mat(double *diag, int n)
     return A;
 }
 
-// gets sorted list of eigen values
-// returns k acording to the eigengap method.
+/* gets sorted list of eigen values
+   returns k acording to the eigengap method. */
 int eigen_gap(double *eigen_values, int length)
 {
     int i, max_index;
     double max_eigen_gap = 0;
     for (i = 1; i <= (length / 2); i++)
     {
-        if (abs(eigen_values[i] - eigen_values[i + 1]) > max_eigen_gap)
+        if (fabs(eigen_values[i] - eigen_values[i + 1]) > max_eigen_gap)
         {
-            max_eigen_gap = abs(eigen_values[i] - eigen_values[i + 1]);
+            max_eigen_gap = fabs(eigen_values[i] - eigen_values[i + 1]);
             max_index = i;
         }
     }
