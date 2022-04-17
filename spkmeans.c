@@ -240,4 +240,7 @@ double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal
         double **T = create_T(jacobi_result, sorted_eigenvals, *k, n);
         return T;
     }
+
+    printf("Some Thing Wrong Happened\n");
+    return NULL;
 }
