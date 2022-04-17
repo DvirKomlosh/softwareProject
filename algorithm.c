@@ -1,4 +1,5 @@
 #pragma once
+#include "spkmeans.h"
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -142,7 +143,7 @@ double *ddg(double **wam_mat, int n)
 
 // gets the ddg,wam and n(the dim of matrix)
 // returns lnorm matrix, destroys ddg in the process
-double **lnorm(double **wam_mat, double *ddg_mat, int n)
+double **lnorm(double **wam_mat, double *ddg_diag, int n)
 {
     int i, j;
     double **lnorm_mat = allocate_double_matrix(n, n);
@@ -151,7 +152,7 @@ double **lnorm(double **wam_mat, double *ddg_mat, int n)
     {
         for (j = 0; j < n; j++)
         {
-            lnorm_mat[i][j] = -wam_mat[i][j] * (1 / (sqrt(ddg_mat[i] * ddg_mat[j])));
+            lnorm_mat[i][j] = -wam_mat[i][j] * (1 / (sqrt(ddg_diag[i] * ddg_diag[j])));
             if (i == j)
                 lnorm_mat[i][j] += 1;
         }
@@ -235,7 +236,7 @@ void set_to_identity(double **V, int n)
     int i, j;
     for (i = 0; i < n; i++)
     {
-        for (int j = 0; j < n; j++)
+        for (j = 0; j < n; j++)
         {
             V[i][j] = (i == j);
         }
@@ -286,6 +287,23 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
     free(A);
 
     return eigens;
+}
+
+double **diag_to_mat(double *diag, int n)
+{
+    int i, j;
+    double **A;
+
+    A = allocate_double_matrix(n, n);
+
+    for (i = 0; i < n; i++)
+    {
+        for (j = 0; j < n; j++)
+        {
+            A[i][j] = (i == j) * diag[i];
+        }
+    }
+    return A;
 }
 
 // gets sorted list of eigen values
