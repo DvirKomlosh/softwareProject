@@ -1,5 +1,7 @@
-#define PY_SSIZE_T_CLEAN
 #include "spkmeans.h"
+#include "algorithm.c"
+
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdio.h>
 #include <assert.h>
@@ -7,37 +9,27 @@
 #include <string.h>
 #include <math.h>
 
-enum goal_enum {
-    spk = 1,
-    wam = 2,
-    ddg = 3,
-    lnorm = 4,
-    jacobi = 5,
-    kmeans = 6,
-};
-
-PyMODINIT_FUNC PyInit_mykmeanssp(void);
+PyMODINIT_FUNC PyInit_spkmeans(void);
 static PyObject* fit(PyObject *self, PyObject *args);
 
-/* This part of the code is taken from the presentations of the course */
+/* This part of the code is taken mostly from the presentations of the course */
 static PyMethodDef kmeansMethods[] = {
     {"fit", 
     (PyCFunction) fit,
     METH_VARARGS, 
-    PyDoc_STR("The main algorithmical function,
-    which receives a goal flag and performs the wanted goal")},
-    {NULL, NULL, 0, NULL},
+    PyDoc_STR("The main algorithmical function, which receives a goal flag and performs the wanted goal")},
+    {NULL, NULL, 0, NULL}
 };
 
 static struct PyModuleDef moduleDef = {
     PyModuleDef_HEAD_INIT,
-    "myspkmeans",
+    "spkmeans",
     NULL, 
     -1, 
     kmeansMethods
 };
 
-PyMODINIT_FUNC PyInit_myspkmeans(void)
+PyMODINIT_FUNC PyInit_spkmeans(void)
 {
     PyObject *m;
     m = PyModule_Create(&moduleDef);
@@ -49,6 +41,7 @@ PyMODINIT_FUNC PyInit_myspkmeans(void)
     return m;
 }
 /* End of current part */
+
 
 /*
  * This function is the main function of this code file.
@@ -65,6 +58,7 @@ static PyObject* fit(PyObject *self, PyObject *args)
     /* Declerations of useful variables */
     int initialize_i;
     int i, j;
+    enum goal_enum goal;
     PyObject* po_primary_i;
     PyObject* po_mu_arr_i;
     PyObject* po_primary_i_j;
@@ -75,29 +69,29 @@ static PyObject* fit(PyObject *self, PyObject *args)
     PyObject* po_primary;
     double** primary;
     PyObject* po_mu_arr;
-    double** mu_arr;
+    double** mu_arr = NULL;
     PyObject* po_return_mat;
-    double** return_mat;
+    double** returned_mat;
 
     /* Receive the useful information from the user */
     if (!PyArg_ParseTuple(args, "OiiiOi", &po_primary, &n, &d, &k, 
     &po_mu_arr, &goal_num))
     {
-        printf("An Error Has Occurred\n");
+        printf("An Error Has Occurred!!!\n");
         return Py_BuildValue("");
     }
-
-    if (goal == 1) goal_enum = spk;
-    else if (goal == 2) goal_enum = wam;
-    else if (goal == 3) goal_enum = ddg;
-    else if (goal == 4) goal_enum = lnorm;
-    else if (goal == 5) goal_enum = jacobi;
-    else if (goal == 6) goal_enum = kmeans;
+    
+    if (goal_num == 1) goal = e_spk;
+    else if (goal_num == 2) goal = e_wam;
+    else if (goal_num == 3) goal = e_ddg;
+    else if (goal_num == 4) goal = e_lnorm;
+    else if (goal_num == 5) goal = e_jacobi;
+    else if (goal_num == 6) goal = e_kmeans;
     else
     {
         /* Unexpected goal value */
         printf("An Error Has Occurred\n");
-        return Py_BuildValue("");}
+        return Py_BuildValue("");
     }
 
     /* Transform the given PyObjects to double matrices */
@@ -128,7 +122,7 @@ static PyObject* fit(PyObject *self, PyObject *args)
         }
     }
 
-    if (goal_enum == spk)
+    if (goal == e_spk)
     {
         mu_arr = (double **)malloc(k * sizeof(double *));
         if (!mu_arr)
@@ -163,14 +157,14 @@ static PyObject* fit(PyObject *self, PyObject *args)
 
     /* Transform the returned matrix to a PyObject (PyList) */
     
-    if (goal_enum == spk) po_return_mat = PyList_New(k);
-    else if (goal_enum == jacobi) po_return_mat = PyList_New(n+1);
+    if (goal == e_spk) po_return_mat = PyList_New(k);
+    else if (goal == e_jacobi) po_return_mat = PyList_New(n+1);
     else po_return_mat = PyList_New(n);
     
     for (i = 0; i < PyList_Size(po_return_mat); i++)
     {
-        if (goal_enum == spk) po_return_mat_i = PyList_New(d);
-        else if (goal_enum == kmeans) po_return_mat_i = PyList_New(k);
+        if (goal == e_spk) po_return_mat_i = PyList_New(d);
+        else if (goal == e_kmeans) po_return_mat_i = PyList_New(k);
         else po_return_mat_i = PyList_New(n);
         for (j = 0; j < PyList_Size(po_return_mat_i); j++)
         {
@@ -187,7 +181,7 @@ static PyObject* fit(PyObject *self, PyObject *args)
     }
     free(primary);
 
-    if (goal_enum == spk)
+    if (goal == e_spk)
     {
         for (initialize_i = 0; initialize_i < k; initialize_i++)
         {
@@ -213,7 +207,7 @@ static PyObject* fit(PyObject *self, PyObject *args)
         }
     }
 
-    if (goal_enum == spk)
+    if (goal == e_spk)
     {
         mu_arr = (double **)malloc(k * sizeof(double *));
         if (!mu_arr)

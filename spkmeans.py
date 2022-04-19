@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from numpy import linalg as lng
 from enum import Enum
-import myspkmeans
+import spkmeans
 
 np.random.seed(0)  # Set np.random.seed(0) at the beginning of your code.
 
@@ -173,11 +173,11 @@ if __name__ == '__main__':
     # Activate the wanted goal function using the CAPI file.
     if goal == GoalEnum.spk:
         # Perform full spectral kmeans
-        T = myspkmeans.fit(np.ndarray.tolist(data), 
-            N, d, k, None, GoalEnum.kmeans)
+        T = spkmeans.fit(np.ndarray.tolist(data), 
+            N, d, k, None, GoalEnum.kmeans.value)
         mu_indices, mu = k_means_pp(k, T)
-        found_centroids = myspkmeans.fit(np.ndarray.tolist(data), 
-            N, d, k, np.ndarray.tolist(mu), GoalEnum.spk)
+        found_centroids = spkmeans.fit(np.ndarray.tolist(data), 
+            N, d, k, np.ndarray.tolist(mu), GoalEnum.spk.value)
         if not found_centroids:
             exit(1)
         output_spk(mu_indices, found_centroids)
@@ -185,24 +185,24 @@ if __name__ == '__main__':
         mat = None
         if goal == GoalEnum.wam:
             # Calculate and output the Weighted Adjacency Matrix
-            mat = myspkmeans.fit(np.ndarray.tolist(data), 
-                N, d, k, None, GoalEnum.wam)
+            mat = spkmeans.fit(np.ndarray.tolist(data), 
+                N, d, k, None, GoalEnum.wam.value)
         elif goal == GoalEnum.ddg:
             # Calculate and output the Diagonal Degree Matrix
-            mat = myspkmeans.fit(np.ndarray.tolist(data),
-                N, d, k, None, GoalEnum.ddg)
+            mat = spkmeans.fit(np.ndarray.tolist(data),
+                N, d, k, None, GoalEnum.ddg.value)
         elif goal == GoalEnum.lnorm:
             # Calculate and output the Normalized Graph Laplacian
-            mat = myspkmeans.fit(np.ndarray.tolist(data),
-                N, d, k, None, GoalEnum.lnorm)
+            mat = spkmeans.fit(np.ndarray.tolist(data),
+                N, d, k, None, GoalEnum.lnorm.value)
         elif goal == GoalEnum.jacobi:
             # Calculate and output the eigenvalues and eigenvectors
             if not jacobi_input_validation(data):
                 # Invalid jacobi matrix
                 print("Invalid Input!")
                 exit(1)
-            mat = myspkmeans.fit(np.ndarray.tolist(data), 
-                N, d, k, None, GoalEnum.jacobi)
+            mat = spkmeans.fit(np.ndarray.tolist(data), 
+                N, d, k, None, GoalEnum.jacobi.value)
         else:
             # Invalid goal value
             print("An Error Has Occurred")
