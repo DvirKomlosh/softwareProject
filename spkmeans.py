@@ -41,7 +41,7 @@ def input_file_management(filename):
         try:
             curr_line_vector = [float(num) for num in lines[row_index].strip('\n').split(',')]
         except ValueError:
-            print("Invalid Input!")
+            print("Invalid Input! (1)")
             exit(1)
         for column_index in range(len(curr_line_vector)):
             dataset[row_index][column_index] = curr_line_vector[column_index]
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     params_from_cmd = list(sys.argv)
     if len(params_from_cmd) != 4:
         # Invalid amount of parameters
-        print("Invalid Input!")
+        print("Invalid Input! (2)")
         exit(1)
 
     # Pass manually and not as parameters!
@@ -116,19 +116,6 @@ if __name__ == '__main__':
     max_iterations = 300
     jacobi_epsilon = 10 ** -5
     kmeans_epsilon = 0
-
-    # Processing of the first parameter - k
-    k = -1
-    if params_from_cmd[1].isnumeric():
-        k = int(params_from_cmd[1])
-    else:
-        # Invalid type of the first parameter
-        print("Invalid Input!")
-        exit(1)
-    if k < 0:
-        # Invalid value of the first parameter
-        print("Invalid Input!")
-        exit(1)
 
     # Processing of the second parameter - goal
     goal_string = params_from_cmd[2]
@@ -145,7 +132,7 @@ if __name__ == '__main__':
         goal = GoalEnum.jacobi
     else:
         # Invalid value of the second parameter
-        print("Invalid Input!")
+        print("Invalid Input! (5)")
         exit(1)
 
     # Processing of the third parameter - file_name
@@ -153,7 +140,7 @@ if __name__ == '__main__':
     #  The file extension is .txt or .csv
     if file_name.split(".")[-1] not in ["txt", "csv"]:
         # Invalid value of the third parameter
-        print("Invalid Input!")
+        print("Invalid Input! (6)")
         exit(1)
     data = input_file_management(file_name)
     N = len(data)
@@ -161,17 +148,28 @@ if __name__ == '__main__':
 
     if N == 0 or d == 0:
         # The input file is empty
-        print("Invalid Input!")
-        exit(1)
-
-    if k >= N:
-        # Invalid value of the first parameter - the number of clusters 
-        # should be smaller then the number of data points.
-        print("Invalid Input!")
+        print("Invalid Input! (7)")
         exit(1)
 
     # Activate the wanted goal function using the CAPI file.
     if goal == GoalEnum.spk:
+        # Processing of the first parameter - k
+        k = -1
+        if params_from_cmd[1].isnumeric():
+            k = int(params_from_cmd[1])
+        else:
+            # Invalid type of the first parameter
+            print("Invalid Input! (3)")
+            exit(1)
+        if k < 0:
+            # Invalid value of the first parameter
+            print("Invalid Input! (4)")
+            exit(1)
+        if k >= N and goal == GoalEnum.spk:
+            # Invalid value of the first parameter - the number of clusters 
+            # should be smaller then the number of data points.
+            print("Invalid Input! (8)")
+            exit(1)
         # Perform full spectral kmeans
         T = spkmeans.fit(np.ndarray.tolist(data), 
             N, d, k, None, GoalEnum.kmeans.value)
@@ -186,23 +184,23 @@ if __name__ == '__main__':
         if goal == GoalEnum.wam:
             # Calculate and output the Weighted Adjacency Matrix
             mat = spkmeans.fit(np.ndarray.tolist(data), 
-                N, d, k, None, GoalEnum.wam.value)
+                N, d, -1, None, GoalEnum.wam.value)
         elif goal == GoalEnum.ddg:
             # Calculate and output the Diagonal Degree Matrix
             mat = spkmeans.fit(np.ndarray.tolist(data),
-                N, d, k, None, GoalEnum.ddg.value)
+                N, d, -1, None, GoalEnum.ddg.value)
         elif goal == GoalEnum.lnorm:
             # Calculate and output the Normalized Graph Laplacian
             mat = spkmeans.fit(np.ndarray.tolist(data),
-                N, d, k, None, GoalEnum.lnorm.value)
+                N, d, -1, None, GoalEnum.lnorm.value)
         elif goal == GoalEnum.jacobi:
             # Calculate and output the eigenvalues and eigenvectors
             if not jacobi_input_validation(data):
                 # Invalid jacobi matrix
-                print("Invalid Input!")
+                print("Invalid Input! (9)")
                 exit(1)
             mat = spkmeans.fit(np.ndarray.tolist(data), 
-                N, d, k, None, GoalEnum.jacobi.value)
+                N, d, -1, None, GoalEnum.jacobi.value)
         else:
             # Invalid goal value
             print("An Error Has Occurred")
