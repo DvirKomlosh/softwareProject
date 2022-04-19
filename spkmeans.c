@@ -29,8 +29,8 @@ int main(int argc, char *argv[])
         printf("Invalid Input!\n");
         return 1;
     }
-
     get_sizes(&input, &n, &d);
+
     data = allocate_double_matrix(n, d);
     read_matrix(&input, data, n, d);
 
@@ -40,10 +40,15 @@ int main(int argc, char *argv[])
         printf("Invalid Input!\n");
         return 1;
     }
-
     output = execute_goal(data, n, d, &k, mu, goal);
 
-    print_to_output(output, n, d);
+    if (goal == e_jacobi)
+    {
+        print_to_output(output, n + 1, n);
+    }
+    else
+        print_to_output(output, n, n);
+
     return 0;
 }
 
@@ -125,14 +130,16 @@ int isValidInput(int argc, char *argv[], FILE **input, enum goal_enum *goal)
     }
     return 1;
 }
-
+/*
 void get_sizes(FILE **input, int *n, int *d)
 {
     char *lineptr;
     int line_read = 1, i;
     n = 0;
+
     while (line_read)
     {
+        printf("read line");
         lineptr = NULL;
         if (fscanf(*input, "%[^\n]", lineptr) == 0)
         {
@@ -147,6 +154,50 @@ void get_sizes(FILE **input, int *n, int *d)
         n += 1;
     }
     fseek(*input, 0, SEEK_SET);
+    printf("done get_sizes\n");
+}
+*/
+
+void get_sizes(FILE **input, int *N, int *d)
+{
+    int dtemp, Ntemp, found_d;
+    int c;
+    c = 0;
+    found_d = 0;
+    dtemp = 1;
+    Ntemp = 0;
+    if (feof(*input))
+    {
+        printf("file was empty\n");
+        return;
+    }
+    while (1)
+    {
+        c = fgetc(*input);
+
+        if (c == '\n')
+        {
+            Ntemp++;
+            if (!found_d)
+            {
+                *d = dtemp;
+                found_d = 1;
+            }
+        }
+        if (c == ',')
+        {
+            dtemp++;
+        }
+
+        if (feof(*input))
+        {
+            break;
+        }
+    }
+    *N = Ntemp;
+    rewind(*input);
+
+    return;
 }
 
 int check_symmetry(double **data, int n, int d)
