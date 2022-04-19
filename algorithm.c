@@ -78,11 +78,13 @@ double **create_U(double **jacobi_mat, double *sorted_eigenvals, int k, int n)
     for (i = 0; i < k; i++)
     {
         current_eigenvalue = sorted_eigenvals[i];
-        while (current_eigenvalue != jacobi_mat[0][++j]);
-        for (j = 0; j < n; j++)
+        while (current_eigenvalue != jacobi_mat[0][++j])
+        {
+        }
+        for (k = 1; k < n + 1; k++)
         {
             /* the first row is the eigen values, so we skip it*/
-            U[j][i] = jacobi_mat[j + 1][i];
+            U[j][k] = jacobi_mat[j][k];
         }
     }
 
@@ -503,4 +505,3 @@ double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal
     printf("Something very wrong happened.\n");
     return NULL;
 }
-
