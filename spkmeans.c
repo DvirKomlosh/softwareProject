@@ -9,11 +9,6 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-#define JAC_MAX_ITER 100
-#define K_MAX_ITER 300
-#define JAC_EPS 0.00001
-#define K_EPS 0
-
 int main(int argc, char *argv[])
 {
     int n, d;
@@ -59,11 +54,20 @@ void read_matrix(FILE **input, double **matrix, int n, int d)
         {
             if (j == d - 1)
             {
-                fscanf(*input, "%le", &matrix[i][j]);
+                if (!fscanf(*input, "%le", &matrix[i][j]))
+                {
+                    printf("An Error Has Occurred\n");
+                    return;
+                }
             }
             else
             {
-                fscanf(*input, "%le,", &matrix[i][j]);
+                if (!fscanf(*input, "%le,", &matrix[i][j]))
+                {
+                    printf("An Error Has Occurred\n");
+                    return;
+                }
+                
             }
         }
     }
@@ -125,7 +129,7 @@ int isValidInput(int argc, char *argv[], FILE **input, enum goal_enum *goal)
         /* Unopenable file */
         printf("Invalid Input!\n");
         return 0;
-    }
+    }    
     return 1;
 }
 /*
@@ -208,16 +212,16 @@ int check_symmetry(double **data, int n, int d)
         for (j = i; j < d; j++)
         {
             if (data[i][j] != data[j][i])
-                return 1;
+                return 0;
         }
     }
-    return 0;
+    return 1;
 }
 
 int isInt(char *intStr)
 {
     int trueInt;
-    int length = strlen(intStr);
+    int length = (int) strlen(intStr);
     int i;
     for (i = 0; i < length; i++)
     {
@@ -238,57 +242,4 @@ int isDigit(char c)
     if ((c >= '0') && (c <= '9'))
         return 1;
     return 0;
-}
-
-/*------------------------------------------------
- goal index:
- spk 1
- wam 2
- ddg 3
- lnorm 4
- jacobi 5
- kmeans 6 (an intermidate step, that returns T to the python)
---------------------------------------------------*/
-
-double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal)
-{
-    double *sorted_eigenvals, *ddg_list_result;
-    double **ddg_result, **wam_result, **lnorm_result, **jacobi_result, **T;
-
-    if (goal == 5)
-        return jacobi(data, n, JAC_MAX_ITER, JAC_EPS);
-
-    if (goal == 1)
-    {
-        Kmeans(data, mu, n, d, *k, K_MAX_ITER, K_EPS);
-        return mu;
-    }
-
-    wam_result = wam(data, n, d);
-    if (goal == e_wam)
-        return wam_result;
-
-    ddg_list_result = ddg(wam_result, n);
-    if (goal == e_ddg)
-    {
-        ddg_result = diag_to_mat(ddg_list_result, n);
-        free(ddg_list_result);
-        return ddg_result;
-    }
-
-    lnorm_result = lnorm(wam_result, ddg_list_result, n);
-    if (goal == e_lnorm)
-        return lnorm_result;
-
-    if (goal == 6)
-    {
-        jacobi_result = jacobi(lnorm_result, n, JAC_MAX_ITER, JAC_EPS);
-        sorted_eigenvals = sort(jacobi_result[0], n);
-        *k = eigen_gap(sorted_eigenvals, n);
-        T = create_T(jacobi_result, sorted_eigenvals, *k, n);
-        return T;
-    }
-
-    printf("Something very wrong happened.\n");
-    return NULL;
 }

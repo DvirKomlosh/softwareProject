@@ -6,28 +6,10 @@
 #include <math.h>
 #include <stdbool.h>
 
-/* Functions from algorithm.c */
-
-/* Allocation functions */
-double **allocate_double_matrix(int length, int width);
-double *allocate_double_array(int dim);
-
-/* Algorithmical functions */
-double **wam(double **data, int n, int d);
-double *ddg(double **wam_mat, int n);
-double **lnorm(double **wam_mat, double *ddg_mat, int n);
-double **jacobi(double **A, int n, int max_iter, double epsilon);
-void Kmeans(double **matrix, double **mu, int n, int d, int k, int max_iter, double EPSILON);
-double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal);
-double **diag_to_mat(double *diag, int n);
-
-/* Inner functions */
-void normalize(double **U, int k, int n);
-double **create_U(double **jacobi_mat, double *sorted_eigenvals, int k, int n);
-int isDigit(char c);
-void set_to_identity(double **V, int n);
-double dist(double *x1, double *x2, int dim);
-double dist_squared(double *x1, double *x2, int dim);
+#define JAC_MAX_ITER 100
+#define K_MAX_ITER 300
+#define JAC_EPS 0.00001
+#define K_EPS 0
 
 #define sign(x) ((x >= 0) - (x < 0))
 
@@ -369,7 +351,7 @@ double **diag_to_mat(double *diag, int n)
    returns k acording to the eigengap method. */
 int eigen_gap(double *eigen_values, int length)
 {
-    int i, max_index;
+    int i, max_index = 0;
     double max_eigen_gap = 0;
     for (i = 1; i <= (length / 2); i++)
     {
@@ -471,11 +453,6 @@ void Kmeans(double **matrix, double **mu, int n, int d, int k, int max_iter, dou
 
 double dist(double *x1, double *x2, int dim)
 {
-    return sqrt(dist_squared(x1, x2, dim));
-}
-
-double dist_squared(double *x1, double *x2, int dim)
-{
     int i;
     double total = 0;
     for (i = 0; i < dim; i++)
@@ -484,3 +461,47 @@ double dist_squared(double *x1, double *x2, int dim)
     }
     return (total);
 }
+
+double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal)
+{
+    double *sorted_eigenvals, *ddg_list_result;
+    double **ddg_result, **wam_result, **lnorm_result, **jacobi_result, **T;
+
+    if (goal == 5)
+        return jacobi(data, n, JAC_MAX_ITER, JAC_EPS);
+
+    if (goal == 1)
+    {
+        Kmeans(data, mu, n, d, *k, K_MAX_ITER, K_EPS);
+        return mu;
+    }
+
+    wam_result = wam(data, n, d);
+    if (goal == e_wam)
+        return wam_result;
+
+    ddg_list_result = ddg(wam_result, n);
+    if (goal == e_ddg)
+    {
+        ddg_result = diag_to_mat(ddg_list_result, n);
+        free(ddg_list_result);
+        return ddg_result;
+    }
+
+    lnorm_result = lnorm(wam_result, ddg_list_result, n);
+    if (goal == e_lnorm)
+        return lnorm_result;
+
+    if (goal == 6)
+    {
+        jacobi_result = jacobi(lnorm_result, n, JAC_MAX_ITER, JAC_EPS);
+        sorted_eigenvals = sort(jacobi_result[0], n);
+        *k = eigen_gap(sorted_eigenvals, n);
+        T = create_T(jacobi_result, sorted_eigenvals, *k, n);
+        return T;
+    }
+
+    printf("Something very wrong happened.\n");
+    return NULL;
+}
+
