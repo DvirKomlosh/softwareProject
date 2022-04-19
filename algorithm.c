@@ -193,11 +193,10 @@ void get_rotation_values(int *i, int *j, double *c, double *s, double **A, int d
     t = (sign(theta)) / (fabs(theta) + sqrt(theta * theta + 1));
     *c = 1 / (sqrt(t * t + 1));
     *s = t * (*c);
-    /*
+
     printf("debug: t = %f, theta = %f\n", t, theta);
     printf("debug: i = %d, j = %d \n", *i, *j);
     printf("debug: c = %f, s = %f \n", *c, *s);
-    */
 }
 
 /* changes A to A':
@@ -214,7 +213,7 @@ void update_A(double **A, int i, int j, double c, double s, int dim)
         arj = A[index][j];
         A[index][i] = c * ari - s * arj;
         A[i][index] = A[index][i];
-        A[index][j] = c * ari + s * arj;
+        A[index][j] = c * arj + s * ari;
         A[j][index] = A[index][j];
     }
     tempii = A[i][i];
@@ -237,7 +236,7 @@ void update_V(double **V, int i, int j, double c, double s, int dim)
         vri = V[index][i];
         vrj = V[index][j];
         V[index][i] = c * vri - s * vrj;
-        V[index][j] = c * vrj + s * vri;
+        V[index][j] = s * vri + c * vrj;
     }
 }
 
@@ -288,7 +287,7 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
         update_A(A, i, j, c, s, n);
         update_V(V, i, j, c, s, n);
 
-        /*printf("current_iter = %d\n", current_iter);
+        printf("current_iter = %d\n", current_iter);
 
         printf("A = \n");
 
@@ -301,7 +300,7 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
         printf("%f %f %f\n", V[0][0], V[0][1], V[0][2]);
         printf("%f %f %f\n", V[1][0], V[1][1], V[1][2]);
         printf("%f %f %f\n\n", V[2][0], V[2][1], V[2][2]);
-        */
+
         convarged = (fabs(off_diag_squared(A, n) - offA) < epsilon);
         offA = off_diag_squared(A, n);
         current_iter++;
