@@ -59,11 +59,11 @@ void read_matrix(FILE **input, double **matrix, int n, int d)
         {
             if (j == d - 1)
             {
-                fscanf(*input, "%le", &matrix[i][j]);
+                fscanf_s(*input, "%le", &matrix[i][j]);
             }
             else
             {
-                fscanf(*input, "%le,", &matrix[i][j]);
+                fscanf_s(*input, "%le,", &matrix[i][j]);
             }
         }
     }
@@ -119,13 +119,12 @@ int isValidInput(int argc, char *argv[], FILE **input, enum goal_enum *goal)
     filename = argv[2];
     suffix = strrchr(filename, '.');
     if (suffix && (!strcmp(suffix, ".csv") || !strcmp(suffix, ".txt")))
-        *input = fopen(filename, "r");
-    if (*input == NULL)
-    {
-        /* Unopenable file */
-        printf("Invalid Input!\n");
-        return 0;
-    }
+        if (fopen_s(*input, filename, "r"))
+        {
+            /* Unopenable file */
+            printf("Invalid Input!\n");
+            return 0;
+        }
     return 1;
 }
 /*
@@ -217,7 +216,7 @@ int check_symmetry(double **data, int n, int d)
 int isInt(char *intStr)
 {
     int trueInt;
-    int length = strlen(intStr);
+    int length = (int) strlen(intStr);
     int i;
     for (i = 0; i < length; i++)
     {
