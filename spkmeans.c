@@ -21,14 +21,12 @@ int main(int argc, char *argv[])
     enum goal_enum goal;
     FILE *input;
     double **data, **output;
-    double **mu = NULL; /* placeholder pointer, we dont use it from the c*/
+    double **mu = NULL; /* placeholder pointer, we dont use it from the c main*/
 
     /* check invalid input */
     if (!isValidInput(argc, argv, &input, &goal))
-    {
-        printf("Invalid Input!\n");
         return 1;
-    }
+
     get_sizes(&input, &n, &d);
 
     data = allocate_double_matrix(n, d);
