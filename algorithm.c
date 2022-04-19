@@ -138,6 +138,10 @@ double **wam(double **data, int n, int d)
         for (j = 0; j < n; j++)
         {
             wam_mat[i][j] = exp(-dist(data[i], data[j], d) / 2.0);
+            if (i == j)
+            {
+                wam_mat[i][i] = 0;
+            }
         }
     }
 
@@ -187,7 +191,7 @@ double **lnorm(double **wam_mat, double *ddg_diag, int n)
 void get_rotation_values(int *i, int *j, double *c, double *s, double **A, int dim)
 {
     int index_i, index_j;
-    double max_off_diag = 0.0, t, theta, c_temp, s_temp;
+    double max_off_diag = 0.0, t, theta;
 
     for (index_i = 0; index_i < dim; index_i++)
     {
@@ -204,10 +208,11 @@ void get_rotation_values(int *i, int *j, double *c, double *s, double **A, int d
 
     theta = (A[*j][*j] - A[*i][*i]) / (2 * A[*i][*j]);
     t = (sign(theta)) / (fabs(theta) + sqrt(theta * theta + 1));
-    c_temp = 1 / (sqrt(t * t + 1));
-    s_temp = t * (*c);
-    *c = c_temp;
-    *s = s_temp;
+    *c = 1 / (sqrt(t * t + 1));
+    *s = t * (*c);
+    printf("debug: t = %f, theta = %f\n", t, theta);
+    printf("debug: i = %d, j = %d \n", *i, *j);
+    printf("debug: c = %f, s = %f \n", *c, *s);
 }
 
 /* changes A to A':
@@ -215,27 +220,39 @@ void get_rotation_values(int *i, int *j, double *c, double *s, double **A, int d
 void update_A(double **A, int i, int j, double c, double s, int dim)
 {
     int index;
-
+    double tempii, tempjj, ari, arj;
     for (index = 0; index < dim; index++)
     {
-        A[index][i] = c * A[index][i] - s * A[index][j];
+        if (index == i || index == j)
+            continue;
+        ari = A[index][i];
+        arj = A[index][j];
+        A[index][i] = c * ari - s * arj;
         A[i][index] = A[index][i];
-        A[index][j] = c * A[index][i] + s * A[index][j];
+        A[index][j] = c * ari + s * arj;
         A[j][index] = A[index][j];
     }
-    A[i][i] = c * c * A[i][i] + s * s * A[j][j] - 2 * s * c * A[i][j];
-    A[j][j] = s * s * A[i][i] + c * c * A[j][j] + 2 * s * c * A[i][j];
+    tempii = A[i][i];
+    tempjj = A[j][j];
+    A[i][i] = c * c * tempii + s * s * tempjj - 2 * s * c * A[i][j];
+    A[j][j] = s * s * tempii + c * c * tempjj + 2 * s * c * A[i][j];
+
+    A[i][j] = 0;
+    A[j][i] = 0;
 }
 
 /* updates V , used in jacobi */
 void update_V(double **V, int i, int j, double c, double s, int dim)
 {
     int index;
+    double vri, vrj;
 
     for (index = 0; index < dim; index++)
     {
-        V[index][i] = c * V[index][i] - s * V[index][j];
-        V[index][j] = c * V[index][i] + s * V[index][j];
+        vri = V[index][i];
+        vrj = V[index][j];
+        V[index][i] = c * vri - s * vrj;
+        V[index][j] = c * vrj + s * vri;
     }
 }
 
@@ -243,7 +260,7 @@ void update_V(double **V, int i, int j, double c, double s, int dim)
 double off_diag_squared(double **matrix, int n)
 {
     int i, j;
-    double sum;
+    double sum = 0;
     for (i = 0; i < n; i++)
     {
         for (j = i + 1; j < n; j++)
@@ -251,6 +268,7 @@ double off_diag_squared(double **matrix, int n)
             sum += 2 * matrix[i][j] * matrix[i][j];
         }
     }
+    printf("debug: off_diag_squared = %f\n", sum);
     return sum;
 }
 
@@ -271,7 +289,7 @@ void set_to_identity(double **V, int n)
    changes A in the process */
 double **jacobi(double **A, int n, int max_iter, double epsilon)
 {
-    bool convarged = false;
+    bool convarged = 0;
     double c, s, offA;
     int i, j, current_iter = 0;
     double **eigens;
@@ -286,12 +304,29 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
         update_A(A, i, j, c, s, n);
         update_V(V, i, j, c, s, n);
 
-        convarged = ((off_diag_squared(A, n) - offA) < epsilon);
+        printf("current_iter = %d\n", current_iter);
+
+        printf("A = \n");
+
+        printf("%f,%f,%f\n", A[0][0], A[0][1], A[0][2]);
+        printf("%f,%f,%f\n", A[1][0], A[1][1], A[1][2]);
+        printf("%f,%f,%f\n\n", A[2][0], A[2][1], A[2][2]);
+
+        printf("V = \n");
+
+        printf("%f %f %f\n", V[0][0], V[0][1], V[0][2]);
+        printf("%f %f %f\n", V[1][0], V[1][1], V[1][2]);
+        printf("%f %f %f\n\n", V[2][0], V[2][1], V[2][2]);
+
+        convarged = (fabs(off_diag_squared(A, n) - offA) < epsilon);
+        offA = off_diag_squared(A, n);
         current_iter++;
         if (current_iter == max_iter)
+        {
+            printf("debug: conv\n\n");
             convarged = true;
+        }
     }
-
     eigens = allocate_double_matrix(n + 1, n);
 
     /* copies the eigenvalues and eigenvectors to the returned matrix */
@@ -301,7 +336,7 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
     }
     for (i = 0; i < n; i++)
     {
-        for (j = 0; j < n; i++)
+        for (j = 0; j < n; j++)
         {
             eigens[i + 1][j] = V[i][j];
         }
@@ -447,5 +482,5 @@ double dist_squared(double *x1, double *x2, int dim)
     {
         total += (x1[i] - x2[i]) * (x1[i] - x2[i]);
     }
-    return sqrt(total);
+    return (total);
 }
