@@ -78,8 +78,7 @@ double **create_U(double **jacobi_mat, double *sorted_eigenvals, int k, int n)
     for (i = 0; i < k; i++)
     {
         current_eigenvalue = sorted_eigenvals[i];
-        while (current_eigenvalue != jacobi_mat[0][++j])
-            ;
+        while (current_eigenvalue != jacobi_mat[0][++j]);
         for (j = 0; j < n; j++)
         {
             /* the first row is the eigen values, so we skip it*/
@@ -192,9 +191,11 @@ void get_rotation_values(int *i, int *j, double *c, double *s, double **A, int d
     t = (sign(theta)) / (fabs(theta) + sqrt(theta * theta + 1));
     *c = 1 / (sqrt(t * t + 1));
     *s = t * (*c);
+    /*
     printf("debug: t = %f, theta = %f\n", t, theta);
     printf("debug: i = %d, j = %d \n", *i, *j);
     printf("debug: c = %f, s = %f \n", *c, *s);
+    */
 }
 
 /* changes A to A':
@@ -250,7 +251,6 @@ double off_diag_squared(double **matrix, int n)
             sum += 2 * matrix[i][j] * matrix[i][j];
         }
     }
-    printf("debug: off_diag_squared = %f\n", sum);
     return sum;
 }
 
@@ -286,7 +286,7 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
         update_A(A, i, j, c, s, n);
         update_V(V, i, j, c, s, n);
 
-        printf("current_iter = %d\n", current_iter);
+        /*printf("current_iter = %d\n", current_iter);
 
         printf("A = \n");
 
@@ -299,13 +299,12 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
         printf("%f %f %f\n", V[0][0], V[0][1], V[0][2]);
         printf("%f %f %f\n", V[1][0], V[1][1], V[1][2]);
         printf("%f %f %f\n\n", V[2][0], V[2][1], V[2][2]);
-
+        */
         convarged = (fabs(off_diag_squared(A, n) - offA) < epsilon);
         offA = off_diag_squared(A, n);
         current_iter++;
         if (current_iter == max_iter)
         {
-            printf("debug: conv\n\n");
             convarged = true;
         }
     }
@@ -459,7 +458,7 @@ double dist(double *x1, double *x2, int dim)
     {
         total += (x1[i] - x2[i]) * (x1[i] - x2[i]);
     }
-    return (total);
+    return sqrt(total);
 }
 
 double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal)

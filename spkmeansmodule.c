@@ -77,7 +77,7 @@ static PyObject* fit(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiiiOi", &po_primary, &n, &d, &k, 
     &po_mu_arr, &goal_num))
     {
-        printf("An Error Has Occurred!!!\n");
+        printf("An Error Has Occurred\n");
         return Py_BuildValue("");
     }
     

@@ -32,7 +32,6 @@ double **create_U(double **jacobi_mat, double *sorted_eigenvals, int k, int n);
 int isDigit(char c);
 void set_to_identity(double **V, int n);
 double dist(double *x1, double *x2, int dim);
-double dist_squared(double *x1, double *x2, int dim);
 
 /* Functions from spkmeans.c */
 void read_matrix(FILE **input, double **matrix, int n, int d);
