@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 
+/* The requested goal enum */
 enum goal_enum
 {
     e_spk = 1,
@@ -11,11 +12,19 @@ enum goal_enum
     e_kmeans = 6
 };
 
+/* Functions from spkmeans.c */
+void read_matrix(FILE **input, double **matrix, int n, int d);
+int isValidInput(int argc, char *argv[], FILE **input, enum goal_enum *goal);
+void get_sizes(FILE **input, int *n, int *d);
+int check_symmetry(double **data, int n, int d);
+void print_to_output(double **output, int n, int d);
+
 /* Functions from algorithm.c */
 
 /* Allocation functions */
 double **allocate_double_matrix(int length, int width);
 double *allocate_double_array(int dim);
+void free_matrix(double **matrix_to_free, int n);
 
 /* Algorithmical functions */
 double **wam(double **data, int n, int d);
@@ -32,12 +41,3 @@ double **create_U(double **jacobi_mat, double *sorted_eigenvals, int k, int n);
 int isDigit(char c);
 void set_to_identity(double **V, int n);
 double dist(double *x1, double *x2, int dim);
-double **zeros(int n,int d);
-void free_matrix(double** matrix_to_free, int n);
-
-/* Functions from spkmeans.c */
-void read_matrix(FILE **input, double **matrix, int n, int d);
-int isValidInput(int argc, char *argv[], FILE **input, enum goal_enum *goal);
-void get_sizes(FILE **input, int *n, int *d);
-int check_symmetry(double **data, int n, int d);
-void print_to_output(double **output, int n, int d);

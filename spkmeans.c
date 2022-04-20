@@ -9,14 +9,16 @@
 
 #define _POSIX_C_SOURCE 200809L
 
+/* main function of the C side,
+can compute the goals jacobi, wam, ddg,lnorm */
 int main(int argc, char *argv[])
 {
     int n, d;
-    int k = -1; /* Placeholder variable, as it's not used in a goal other than spk and kmeans. */
+    int k = -1; /* Placeholder variable, not used from the c main.*/
     enum goal_enum goal;
     FILE *input;
     double **data, **output;
-    double **mu = NULL; /* placeholder pointer, we dont use it from the c main*/
+    double **mu = NULL; /* placeholder pointer,not used from the c main*/
 
     /* check invalid input */
     if (!isValidInput(argc, argv, &input, &goal))
@@ -33,6 +35,7 @@ int main(int argc, char *argv[])
         printf("Invalid Input!\n");
         return 1;
     }
+    /* out put should have the output matrix after executing the goal*/
     output = execute_goal(data, n, d, &k, mu, goal);
 
     if (goal == e_jacobi)
@@ -44,11 +47,13 @@ int main(int argc, char *argv[])
     {
         print_to_output(output, n, n);
         free_matrix(output, n);
-    }   
+    }
     free_matrix(data, n);
     return 0;
 }
 
+/*  reads a file that holds a matrix of floats- of some
+    places the values inside matrix                    */
 void read_matrix(FILE **input, double **matrix, int n, int d)
 {
     int i, j;
@@ -60,6 +65,7 @@ void read_matrix(FILE **input, double **matrix, int n, int d)
             {
                 if (!fscanf(*input, "%le", &matrix[i][j]))
                 {
+                    /*file is not in the correct format*/
                     printf("An Error Has Occurred\n");
                     return;
                 }
@@ -71,12 +77,14 @@ void read_matrix(FILE **input, double **matrix, int n, int d)
                     printf("An Error Has Occurred\n");
                     return;
                 }
-                
             }
         }
     }
 }
 
+/*  Validates the input, printing "Invalid Input!" if invalid
+    returns 1 if valid, and parses the arguments while doing so
+    (placing the FILE into input, goal into goal)              */
 int isValidInput(int argc, char *argv[], FILE **input, enum goal_enum *goal)
 {
     char *goal_string, *filename, *suffix;
@@ -103,6 +111,7 @@ int isValidInput(int argc, char *argv[], FILE **input, enum goal_enum *goal)
         return 0;
     }
 
+    /* check for thr right suffix of output */
     filename = argv[2];
     suffix = strrchr(filename, '.');
     if (suffix && (!strcmp(suffix, ".csv") || !strcmp(suffix, ".txt")))
@@ -112,10 +121,13 @@ int isValidInput(int argc, char *argv[], FILE **input, enum goal_enum *goal)
         /* Unopenable file */
         printf("Invalid Input!\n");
         return 0;
-    }    
+    }
     return 1;
 }
 
+/* computes the dimentions of the data matrix N,d
+   from the input file, and assign them.
+   printing an error message in case of invalid input*/
 void get_sizes(FILE **input, int *N, int *d)
 {
     int dtemp, Ntemp, found_d;
@@ -126,7 +138,7 @@ void get_sizes(FILE **input, int *N, int *d)
     Ntemp = 0;
     if (feof(*input))
     {
-        printf("file was empty\n");
+        printf("An Error Has Occurred\n");
         return;
     }
     while (1)
@@ -158,6 +170,8 @@ void get_sizes(FILE **input, int *N, int *d)
     return;
 }
 
+/* checks if the matrix data is symetrical,
+   returns 1 if it is, 0 otherwise         */
 int check_symmetry(double **data, int n, int d)
 {
     int i, j;
@@ -174,10 +188,12 @@ int check_symmetry(double **data, int n, int d)
     return 1;
 }
 
+/*  Checks if a char array represents an int,
+    returns the int, 0 if it does not        */
 int isInt(char *intStr)
 {
     int trueInt;
-    int length = (int) strlen(intStr);
+    int length = (int)strlen(intStr);
     int i;
     for (i = 0; i < length; i++)
     {
@@ -193,6 +209,8 @@ int isInt(char *intStr)
     return trueInt;
 }
 
+/*  Checks if a char is a digit (0-9),
+    true if it is                       */
 int isDigit(char c)
 {
     if ((c >= '0') && (c <= '9'))
