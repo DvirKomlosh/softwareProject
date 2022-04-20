@@ -174,7 +174,7 @@ static PyObject* fit(PyObject *self, PyObject *args)
     }
 
     /* Free alocated memory */
-    // free_matrix(primary, n);
+    free_matrix(primary, n);
 
     if (goal == e_spk)
     {
