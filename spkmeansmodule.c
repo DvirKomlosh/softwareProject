@@ -11,9 +11,7 @@ static PyMethodDef kmeansMethods[] = {
     {"fit", 
     (PyCFunction) fit,
     METH_VARARGS, 
-    PyDoc_STR("The main algorithmical function, 
-    which receives a goal flag and other required parameters 
-    and performs the wanted goal")},
+    PyDoc_STR("The main algorithmical function")},
     {NULL, NULL, 0, NULL}
 };
 
