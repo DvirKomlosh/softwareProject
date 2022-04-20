@@ -484,7 +484,8 @@ double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal
     {
         jacobi_result = jacobi(lnorm_result, n, JAC_MAX_ITER, JAC_EPS);
         sorted_eigenvals = sort(jacobi_result[0], n);
-        *k = eigen_gap(sorted_eigenvals, n);
+        if (k == 0)
+            *k = eigen_gap(sorted_eigenvals, n);
         T = create_T(jacobi_result, sorted_eigenvals, *k, n);
         return T;
     }
