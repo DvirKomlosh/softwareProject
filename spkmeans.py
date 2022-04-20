@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from numpy import linalg as lng
 from enum import Enum
-import spkmeans
+import spkmeansmodule
 
 np.random.seed(0)  # Set np.random.seed(0) at the beginning of your code.
 
@@ -91,8 +91,19 @@ def output_spk(indices, centroids):
                         for i in range(len(centroids[row_index]))]))
 
 
+# This function is responsible of outputting the data of the jacobi procedure.
+def output_jacobi(matrix):
+    for i in range(len(matrix[0])):
+        # As requested in the forum, change "-0.0000" instances to "0.0000".
+        if "{:.4f}".format(matrix[0][i]) == "-0.0000":
+            matrix[0][i] = abs(matrix[0][i])
+    for row_index in range(len(matrix)):
+        print(",".join(["{:.4f}".format(matrix[row_index][i])
+                        for i in range(len(matrix[row_index]))]))
+
+
 # This function is responsible of outputting the data of all other procedures.
-def output_other_than_spk(matrix):
+def output_other(matrix):
     for row_index in range(len(matrix)):
         print(",".join(["{:.4f}".format(matrix[row_index][i])
                         for i in range(len(matrix[row_index]))]))
@@ -171,7 +182,7 @@ if __name__ == '__main__':
             exit(1)
 
         # Perform full spectral kmeans
-        T = spkmeans.fit(np.ndarray.tolist(data),
+        T = spkmeansmodule.fit(np.ndarray.tolist(data),
                          n, d, k, None, GoalEnum.kmeans.value)
         k = len(T[0])
         if k == 1:
@@ -182,7 +193,7 @@ if __name__ == '__main__':
 
         # Return the kmeans++ results to the C program,
         # which will activate the regular kmeans function.
-        found_centroids = spkmeans.fit(T,
+        found_centroids = spkmeansmodule.fit(T,
                                        n, k, k, np.ndarray.tolist(mu), GoalEnum.spk.value)
         if not found_centroids:
             # The second fit() call has returned None.
@@ -193,15 +204,15 @@ if __name__ == '__main__':
         mat = None
         if goal == GoalEnum.wam:
             # Calculate and output the Weighted Adjacency Matrix
-            mat = spkmeans.fit(np.ndarray.tolist(data),
+            mat = spkmeansmodule.fit(np.ndarray.tolist(data),
                                n, d, -1, None, GoalEnum.wam.value)
         elif goal == GoalEnum.ddg:
             # Calculate and output the Diagonal Degree Matrix
-            mat = spkmeans.fit(np.ndarray.tolist(data),
+            mat = spkmeansmodule.fit(np.ndarray.tolist(data),
                                n, d, -1, None, GoalEnum.ddg.value)
         elif goal == GoalEnum.lnorm:
             # Calculate and output the Normalized Graph Laplacian
-            mat = spkmeans.fit(np.ndarray.tolist(data),
+            mat = spkmeansmodule.fit(np.ndarray.tolist(data),
                                n, d, -1, None, GoalEnum.lnorm.value)
         elif goal == GoalEnum.jacobi:
             # Calculate and output the eigenvalues and eigenvectors
@@ -209,10 +220,15 @@ if __name__ == '__main__':
                 # Invalid jacobi matrix
                 print("Invalid Input!")
                 exit(1)
-            mat = spkmeans.fit(np.ndarray.tolist(data),
+            mat = spkmeansmodule.fit(np.ndarray.tolist(data),
                                n, d, -1, None, GoalEnum.jacobi.value)
         else:
             # Invalid goal value
             print("An Error Has Occurred")
             exit(1)
-        output_other_than_spk(mat)  # Print the wanted data.
+
+        # Print the wanted data.
+        if goal == GoalEnum.jacobi:
+            output_jacobi(mat)
+        else:
+            output_other(mat)

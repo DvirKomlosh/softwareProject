@@ -1,17 +1,3 @@
-#pragma once
-#include "spkmeans.h"
-#include <stdio.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <stdbool.h>
-
-#define JAC_MAX_ITER 100
-#define K_MAX_ITER 300
-#define JAC_EPS 0.00001
-#define K_EPS 0
-
 /* a macro to compute the sign of a double,
    (we define sign(0) = 1)                   */
 #define sign(x) ((x >= 0) - (x < 0))

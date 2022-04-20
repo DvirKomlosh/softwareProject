@@ -1,5 +1,5 @@
 #include "spkmeans.h"
-#include "algorithm.c"
+#include "spkmeans.c"
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
@@ -17,13 +17,13 @@ static PyMethodDef kmeansMethods[] = {
 
 static struct PyModuleDef moduleDef = {
     PyModuleDef_HEAD_INIT,
-    "spkmeans",
+    "spkmeansmodule",
     NULL, 
     -1, 
     kmeansMethods
 };
 
-PyMODINIT_FUNC PyInit_spkmeans(void)
+PyMODINIT_FUNC PyInit_spkmeansmodule(void)
 {
     PyObject *m;
     m = PyModule_Create(&moduleDef);

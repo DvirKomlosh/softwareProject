@@ -19,8 +19,6 @@ void get_sizes(FILE **input, int *n, int *d);
 int check_symmetry(double **data, int n, int d);
 void print_to_output(double **output, int n, int d);
 
-/* Functions from algorithm.c */
-
 /* Allocation functions */
 double **allocate_double_matrix(int length, int width);
 double *allocate_double_array(int dim);
