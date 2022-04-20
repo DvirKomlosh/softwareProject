@@ -24,7 +24,11 @@ void print_to_output(double **output, int n, int d);
 /* Allocation functions */
 double **allocate_double_matrix(int length, int width);
 double *allocate_double_array(int dim);
+<<<<<<< HEAD
 void free_matrix(double** matrix_to_free, int n);
+=======
+void free_matrix(double **matrix_to_free, int n);
+>>>>>>> ab71470d00cb1fa9e98b0f5845880e5c63e157d2
 
 /* Algorithmical functions */
 double **wam(double **data, int n, int d);
@@ -42,4 +46,8 @@ void normalize(double **U, int k, int n);
 double **create_U(double **jacobi_mat, double *sorted_eigenvals, int k, int n);
 int isDigit(char c);
 void set_to_identity(double **V, int n);
+<<<<<<< HEAD
 double dist(double *x1, double *x2, int dim);
+=======
+double dist(double *x1, double *x2, int dim);
+>>>>>>> ab71470d00cb1fa9e98b0f5845880e5c63e157d2

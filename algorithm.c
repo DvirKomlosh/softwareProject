@@ -12,8 +12,11 @@
 #define JAC_EPS 0.00001
 #define K_EPS 0
 
+/* a macro to compute the sign of a double,
+   (we define sign(0) = 1)                   */
 #define sign(x) ((x >= 0) - (x < 0))
 
+/*  sortes a copy of array of size n, returns a pointer to the array*/
 double *sort(double *array, int size)
 {
     double temp;
@@ -40,14 +43,18 @@ double *sort(double *array, int size)
     return sorted;
 }
 
-double **create_T(double **jacobi_mat, double *sorted_eigenvals, int k, int n)
+/*  creates the matrix T from the eigen values
+    and the corresponding eigenvectors          */
+double **create_T(double **eigen_mat, double *sorted_eigenvals, int k, int n)
 {
     double **T;
-    T = create_U(jacobi_mat, sorted_eigenvals, k, n);
-    normalize(T, k, n);
+
+    T = create_U(eigen_mat, sorted_eigenvals, k, n); /* creating the U matrix*/
+    normalize(T, k, n);                              /* normaizing U to get T*/
     return T;
 }
 
+/* normalizes the rows of the matrix U, with dimentions n*d */
 void normalize(double **U, int k, int n)
 {
     int i, j;
@@ -60,18 +67,21 @@ void normalize(double **U, int k, int n)
             norm += U[i][j] * U[i][j];
         }
         norm = sqrt(norm);
-        if (norm == 0) continue;
+        /*in the case that the norm is 0, we do not change the vector,
+          so we do not want to divide by 0*/
+        if (norm == 0)
+            continue;
         for (j = 0; j < k; j++)
         {
             U[i][j] = U[i][j] / norm;
         }
     }
 }
-
+/*  creates the U matrix, consisting of the first k
+    eigenvectors of the lnorm matrix, sorted by eigen value */
 double **create_U(double **jacobi_mat, double *sorted_eigenvals, int k, int n)
 {
     int i, j = 0, m;
-    /* int time_to_stop_i = k - 1; */
     double current_eigenvalue;
     double **U;
 
@@ -80,25 +90,27 @@ double **create_U(double **jacobi_mat, double *sorted_eigenvals, int k, int n)
     {
         current_eigenvalue = sorted_eigenvals[i];
         j = 0;
+        /*find the column index of the eigenvector
+          corresponding to the current eigen value method*/
         while (current_eigenvalue != jacobi_mat[0][j])
         {
             j++;
         }
-        /* if (i == time_to_stop_i) break; */
-        for (m = 0; m < n ; m++)
+        for (m = 0; m < n; m++)
         {
             /* the first row is the eigen values, so we skip it*/
-            U[m][i] = jacobi_mat[m+1][j];
+            U[m][i] = jacobi_mat[m + 1][j];
         }
     }
     return U;
 }
 
+/*alocates the space of a length * width space in the memory as a matrix*/
 double **allocate_double_matrix(int length, int width)
 {
     int i;
     double **matrix = (double **)malloc(length * sizeof(double *));
-    
+
     for (i = 0; i < length; i++)
     {
         matrix[i] = allocate_double_array(width);
@@ -106,6 +118,7 @@ double **allocate_double_matrix(int length, int width)
     return matrix;
 }
 
+/*alocates an array of size dim in the memory*/
 double *allocate_double_array(int dim)
 {
     return (double *)malloc(dim * sizeof(double));
@@ -155,7 +168,7 @@ double *ddg(double **wam_mat, int n)
     return ddg_mat;
 }
 
-/* gets the ddg,wam and n(the dim of matrix)
+/* gets the ddg,wam and n (the dim of matrix)
    returns lnorm matrix, destroys ddg in the process*/
 double **lnorm(double **wam_mat, double *ddg_diag, int n)
 {
@@ -166,7 +179,8 @@ double **lnorm(double **wam_mat, double *ddg_diag, int n)
     {
         for (j = 0; j < n; j++)
         {
-            lnorm_mat[i][j] = -wam_mat[i][j] * (1 / (sqrt(ddg_diag[i] * ddg_diag[j])));
+            lnorm_mat[i][j] = -wam_mat[i][j] *
+                              (1 / (sqrt(ddg_diag[i] * ddg_diag[j])));
             if (i == j)
                 lnorm_mat[i][j] += 1;
         }
@@ -175,7 +189,10 @@ double **lnorm(double **wam_mat, double *ddg_diag, int n)
     return lnorm_mat;
 }
 
-void get_rotation_values(int *i, int *j, double *c, double *s, double **A, int dim)
+/* a helper method for Jacobi, placing the
+   correct i,j,c,s into their adresses     */
+void get_rotation_values(int *i, int *j, double *c,
+                         double *s, double **A, int dim)
 {
     int index_i, index_j;
     double max_off_diag = 0.0, t, theta;
@@ -197,11 +214,10 @@ void get_rotation_values(int *i, int *j, double *c, double *s, double **A, int d
     t = (sign(theta)) / (fabs(theta) + sqrt(theta * theta + 1));
     *c = 1 / (sqrt(t * t + 1));
     *s = t * (*c);
-
 }
 
-/* changes A to A':
-   used in jacobi */
+/* a helper method for Jacobi
+   changes A to A' (one iteration of the jacobi algorithm)*/
 void update_A(double **A, int i, int j, double c, double s, int dim)
 {
     int index;
@@ -226,7 +242,8 @@ void update_A(double **A, int i, int j, double c, double s, int dim)
     A[j][i] = 0;
 }
 
-/* updates V , used in jacobi */
+/* a helper method for Jacobi
+   updates V (one iteration of the jacobi algorithm)*/
 void update_V(double **V, int i, int j, double c, double s, int dim)
 {
     int index;
@@ -241,7 +258,8 @@ void update_V(double **V, int i, int j, double c, double s, int dim)
     }
 }
 
-/* convergacne metric for Jacobi */
+/*  convergacne metric for Jacobi, returns the sum of squared
+    elements on the off-diagonal of the square matrix of dimentions n*n */
 double off_diag_squared(double **matrix, int n)
 {
     int i, j;
@@ -256,6 +274,7 @@ double off_diag_squared(double **matrix, int n)
     return sum;
 }
 
+/*  set an n*n square matrix to an identity matrix*/
 void set_to_identity(double **V, int n)
 {
     int i, j;
@@ -288,6 +307,7 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
         update_A(A, i, j, c, s, n);
         update_V(V, i, j, c, s, n);
 
+        /*check convergence:*/
         convarged = (fabs(off_diag_squared(A, n) - offA) < epsilon);
         offA = off_diag_squared(A, n);
         current_iter++;
@@ -315,6 +335,8 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
     return eigens;
 }
 
+/* creates a diagonal n*n matrix from the array diag (of length n)
+   with the diag[i]=matrix[i][i]                                   */
 double **diag_to_mat(double *diag, int n)
 {
     int i, j;
@@ -338,7 +360,8 @@ int eigen_gap(double *eigen_values, int length)
 {
     int i, max_index = 0;
     double max_eigen_gap = 0;
-    if (length == 1) return 1;
+    if (length == 1)
+        return 1;
     for (i = 0; i < (length / 2); i++)
     {
         if (fabs(eigen_values[i] - eigen_values[i + 1]) > max_eigen_gap)
@@ -350,7 +373,10 @@ int eigen_gap(double *eigen_values, int length)
     return max_index + 1;
 }
 
-void Kmeans(double **matrix, double **mu, int n, int d, int k, int max_iter, double EPSILON)
+/*preforms the k means algorithm on the points in matrix
+  with the initilization points given inside mu         */
+void Kmeans(double **matrix, double **mu, int n, int d,
+            int k, int max_iter, double EPSILON)
 {
     double minimal_distance;
     int curr_cluster, iter, j, i;
@@ -437,6 +463,8 @@ void Kmeans(double **matrix, double **mu, int n, int d, int k, int max_iter, dou
     free(cluster_size);
 }
 
+/* computes the eulerian distance between vectors x1,x2
+    of dimention dim                                    */
 double dist(double *x1, double *x2, int dim)
 {
     int i;
@@ -448,21 +476,8 @@ double dist(double *x1, double *x2, int dim)
     return sqrt(total);
 }
 
-double **zeros(int n,int d)
-{
-    int j,i;
-    double** T;
-    T = allocate_double_matrix(n,d);
-    for(i=0 ; i<n ; i++)
-    {
-        for(j=0 ; j<d ; j++)
-        {
-            T[i][j]=0.0;
-        }
-    }
-    return T;
-}
-
+/*prints a matrix of size n*d to output
+  with the conventions given for the project */
 void print_to_output(double **output, int n, int d)
 {
     int i, j;
@@ -484,7 +499,8 @@ void print_to_output(double **output, int n, int d)
     }
 }
 
-void free_matrix(double** matrix_to_free, int n)
+/* frees a matrix built of n rows */
+void free_matrix(double **matrix_to_free, int n)
 {
     int i;
     for (i = 0; i < n; i++)
@@ -494,15 +510,20 @@ void free_matrix(double** matrix_to_free, int n)
     free(matrix_to_free);
 }
 
-double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal)
+/*  main function, executes the goal called from either python or C
+    returns the matrix to be outputed for each goal
+    (in the case goal = e_kmeans- an intermidate step to return to python
+     before performing the full kmeans algorithm, we return the T matrix) */
+double **execute_goal(double **data, int n, int d,
+                      int *k, double **mu, int goal)
 {
     double *sorted_eigenvals, *ddg_list_result;
     double **ddg_result, **wam_result, **lnorm_result, **jacobi_result, **T;
 
-    if (goal == 5)
+    if (goal == e_jacobi)
         return jacobi(data, n, JAC_MAX_ITER, JAC_EPS);
 
-    if (goal == 1)
+    if (goal == e_spk)
     {
         Kmeans(data, mu, n, d, *k, K_MAX_ITER, K_EPS);
         return mu;
@@ -527,7 +548,7 @@ double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal
     if (goal == e_lnorm)
         return lnorm_result;
 
-    if (goal == 6)
+    if (goal == e_kmeans)
     {
         jacobi_result = jacobi(lnorm_result, n, JAC_MAX_ITER, JAC_EPS);
         sorted_eigenvals = sort(jacobi_result[0], n);
