@@ -41,7 +41,7 @@ def input_file_management(filename):
         try:
             curr_line_vector = [float(num) for num in lines[row_index].strip('\n').split(',')]
         except ValueError:
-            print("Invalid Input! (1)")
+            print("Invalid Input!")
             exit(1)
         for column_index in range(len(curr_line_vector)):
             dataset[row_index][column_index] = curr_line_vector[column_index]
@@ -80,7 +80,7 @@ def k_means_pp(k_val, clustering_data):
 
 # This function is responsible of outputting the data of the spk procedure.
 def output_spk(indices, centroids):
-    print(",".join(["{:.4f}".format(indices[i]) for i in range(len(indices))]))
+    print(",".join([str(int(indices[i])) for i in range(len(indices))]))
     for row_index in range(len(centroids)):
         print(",".join(["{:.4f}".format(centroids[row_index][i])
                         for i in range(len(centroids[row_index]))]))
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     params_from_cmd = list(sys.argv)
     if len(params_from_cmd) != 4:
         # Invalid amount of parameters
-        print("Invalid Input! (2)")
+        print("Invalid Input!")
         exit(1)
 
     # Pass manually and not as parameters!
@@ -132,7 +132,7 @@ if __name__ == '__main__':
         goal = GoalEnum.jacobi
     else:
         # Invalid value of the second parameter
-        print("Invalid Input! (5)")
+        print("Invalid Input!")
         exit(1)
 
     # Processing of the third parameter - file_name
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     #  The file extension is .txt or .csv
     if file_name.split(".")[-1] not in ["txt", "csv"]:
         # Invalid value of the third parameter
-        print("Invalid Input! (6)")
+        print("Invalid Input!")
         exit(1)
     data = input_file_management(file_name)
     N = len(data)
@@ -148,7 +148,7 @@ if __name__ == '__main__':
 
     if N == 0 or d == 0:
         # The input file is empty
-        print("Invalid Input! (7)")
+        print("Invalid Input!")
         exit(1)
 
     # Activate the wanted goal function using the CAPI file.
@@ -159,22 +159,29 @@ if __name__ == '__main__':
             k = int(params_from_cmd[1])
         else:
             # Invalid type of the first parameter
-            print("Invalid Input! (3)")
+            print("Invalid Input!")
             exit(1)
         if k < 0:
             # Invalid value of the first parameter
-            print("Invalid Input! (4)")
+            print("Invalid Input!")
+            exit(1)
+        if k == 1:
+            # Invalid value of the first parameter
+            print("Invalid Input!")
             exit(1)
         if k >= N:
             # Invalid value of the first parameter - the number of clusters 
             # should be smaller then the number of data points.
-            print("Invalid Input! (8)")
+            print("Invalid Input!")
             exit(1)
         # Perform full spectral kmeans
         T = spkmeans.fit(np.ndarray.tolist(data), 
             N, d, k, None, GoalEnum.kmeans.value)
         k = len(T[0])
-        print("k7.5: " + str(k) + "\n")
+        if k == 1:
+            # Invalid value of the first parameter, set by the hueristic function.
+            print("An Error Has Occurred")
+            exit(1)
         mu_indices, mu = k_means_pp(k, T)
         found_centroids = spkmeans.fit(T, 
             N, k, k, np.ndarray.tolist(mu), GoalEnum.spk.value)
@@ -199,7 +206,7 @@ if __name__ == '__main__':
             # Calculate and output the eigenvalues and eigenvectors
             if not jacobi_input_validation(data):
                 # Invalid jacobi matrix
-                print("Invalid Input! (9)")
+                print("Invalid Input!")
                 exit(1)
             mat = spkmeans.fit(np.ndarray.tolist(data), 
                 N, d, -1, None, GoalEnum.jacobi.value)

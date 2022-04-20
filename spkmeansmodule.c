@@ -74,7 +74,6 @@ static PyObject* fit(PyObject *self, PyObject *args)
     double** returned_mat;
 
     /* Receive the useful information from the user */
-    printf("0\n");
     if (!PyArg_ParseTuple(args, "OiiiOi", &po_primary, &n, &d, &k, 
     &po_mu_arr, &goal_num))
     {
@@ -82,7 +81,6 @@ static PyObject* fit(PyObject *self, PyObject *args)
         return Py_BuildValue("");
     }
 
-    printf("0.5\n");
     if (goal_num == 1) goal = e_spk;
     else if (goal_num == 2) goal = e_wam;
     else if (goal_num == 3) goal = e_ddg;
@@ -97,14 +95,13 @@ static PyObject* fit(PyObject *self, PyObject *args)
     }
 
     /* Transform the given PyObjects to double matrices */
-    printf("1\n");
     primary = (double **)malloc(n * sizeof(double *));
     if (!primary)
     {
         printf("An Error Has Occurred\n");
         return Py_BuildValue("");
     }
-    printf("2\n");
+
     for (initialize_i = 0; initialize_i < n; initialize_i++)
     {
         primary[initialize_i] = (double *)malloc(d * sizeof(double));
@@ -115,7 +112,6 @@ static PyObject* fit(PyObject *self, PyObject *args)
         }
     }
     
-    printf("3\n");
     for (i = 0; i < n; i++)
     {
         po_primary_i = PyList_GetItem(po_primary, i);
@@ -125,17 +121,16 @@ static PyObject* fit(PyObject *self, PyObject *args)
             primary[i][j] = (double)PyFloat_AsDouble(po_primary_i_j);
         }
     }
-    printf("4\n");
+
     if (goal == e_spk)
     {
         mu_arr = (double **)malloc(k * sizeof(double *));
-        printf("5\n");
         if (!mu_arr)
         {
             printf("An Error Has Occurred\n");
             return Py_BuildValue("");
         }
-        printf("6\n");
+
         for (initialize_i = 0; initialize_i < k; initialize_i++)
         {
             mu_arr[initialize_i] = (double *)malloc(d * sizeof(double));
@@ -145,7 +140,7 @@ static PyObject* fit(PyObject *self, PyObject *args)
                 return Py_BuildValue("");
             }
         }
-        printf("7\n");
+
         for (i = 0; i < k; i++)
         {
             po_mu_arr_i = PyList_GetItem(po_mu_arr, i);
@@ -159,14 +154,11 @@ static PyObject* fit(PyObject *self, PyObject *args)
 
     /* Activate the main C function */
     returned_mat = execute_goal(primary, n, d, &k, mu_arr, goal);
-    printf("n1: %d\n", n);
-    printf("d1: %d\n", d);
-    printf("k1: %d\n", k);
+
     /* Transform the returned matrix to a PyObject (PyList) */   
     if (goal == e_spk) po_return_mat = PyList_New(k);
     else if (goal == e_jacobi) po_return_mat = PyList_New(n+1);
     else po_return_mat = PyList_New(n);
-    printf("9\n");
     for (i = 0; i < PyList_Size(po_return_mat); i++)
     {
         if (goal == e_spk) po_return_mat_i = PyList_New(d);
@@ -176,35 +168,18 @@ static PyObject* fit(PyObject *self, PyObject *args)
         {
             PyList_SetItem(po_return_mat_i, j,
                 Py_BuildValue("d", returned_mat[i][j]));
-            printf("i = %d, j = %d, item = %f\n", i, j, returned_mat[i][j]);
+            /* printf("i = %d, j = %d, item = %f\n", i, j, returned_mat[i][j]); */
         }
         PyList_SetItem(po_return_mat, i, po_return_mat_i);
     }
-    printf("10\n");
+
     /* Free alocated memory */
-    // for (initialize_i = 0; initialize_i < n; initialize_i++)
-    // {
-    //     for (initialize_j = 0; initialize_j < n; initialize_j++)
-    //     {
-    //         printf("10.25 %f\n", primary[initialize_i][initialize_j]);
-    //     }
-    // }
-    // for (initialize_i = 0; initialize_i < n; initialize_i++)
-    // {
-    //     printf("i: %d\n", initialize_i);
-    //     free(primary[initialize_i]);
-    // }
-    // printf("10.5\n");
-    // free(primary);
-    printf("11\n");
+    // free_matrix(primary, n);
+
     if (goal == e_spk)
     {
-        for (initialize_i = 0; initialize_i < k; initialize_i++)
-        {
-            free(mu_arr[initialize_i]);
-        }
-        free(mu_arr);
+        free_matrix(mu_arr, k);
     }
-    printf("12\n");
+
     return po_return_mat;
 }

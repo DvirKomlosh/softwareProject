@@ -33,6 +33,7 @@ int isDigit(char c);
 void set_to_identity(double **V, int n);
 double dist(double *x1, double *x2, int dim);
 double **zeros(int n,int d);
+void free_matrix(double** matrix_to_free, int n);
 
 /* Functions from spkmeans.c */
 void read_matrix(FILE **input, double **matrix, int n, int d);

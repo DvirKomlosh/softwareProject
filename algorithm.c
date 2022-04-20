@@ -37,7 +37,6 @@ double *sort(double *array, int size)
             }
         }
     }
-
     return sorted;
 }
 
@@ -61,6 +60,7 @@ void normalize(double **U, int k, int n)
             norm += U[i][j] * U[i][j];
         }
         norm = sqrt(norm);
+        if (norm == 0) continue;
         for (j = 0; j < k; j++)
         {
             U[i][j] = U[i][j] / norm;
@@ -311,9 +311,7 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
         }
     }
 
-    free(V);
-    free(A);
-
+    free_matrix(V, n);
     return eigens;
 }
 
@@ -343,7 +341,7 @@ int eigen_gap(double *eigen_values, int length)
     if (length == 1) return 1;
     for (i = 0; i < (length / 2); i++)
     {
-        if (fabs(eigen_values[i] - eigen_values[i + 1]) >= max_eigen_gap)
+        if (fabs(eigen_values[i] - eigen_values[i + 1]) > max_eigen_gap)
         {
             max_eigen_gap = fabs(eigen_values[i] - eigen_values[i + 1]);
             max_index = i;
@@ -465,7 +463,36 @@ double **zeros(int n,int d)
     return T;
 }
 
+void print_to_output(double **output, int n, int d)
+{
+    int i, j;
 
+    for (i = 0; i < n; i++)
+    {
+        for (j = 0; j < d; j++)
+        {
+            printf("%.4f", output[i][j]);
+            if (j != d - 1)
+            {
+                printf(",");
+            }
+            else
+            {
+                printf("\n");
+            }
+        }
+    }
+}
+
+void free_matrix(double** matrix_to_free, int n)
+{
+    int i;
+    for (i = 0; i < n; i++)
+    {
+        free(matrix_to_free[i]);
+    }
+    free(matrix_to_free);
+}
 
 double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal)
 {
@@ -490,10 +517,13 @@ double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal
     {
         ddg_result = diag_to_mat(ddg_list_result, n);
         free(ddg_list_result);
+        free_matrix(wam_result, n);
         return ddg_result;
     }
 
     lnorm_result = lnorm(wam_result, ddg_list_result, n);
+    free_matrix(wam_result, n);
+    free(ddg_list_result);
     if (goal == e_lnorm)
         return lnorm_result;
 
@@ -503,13 +533,12 @@ double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal
         sorted_eigenvals = sort(jacobi_result[0], n);
         if (*k == 0)
         {
-            printf("k2: %d\n", *k);
             *k = eigen_gap(sorted_eigenvals, n);
         }
-        printf("k3: %d\n", *k);
         T = create_T(jacobi_result, sorted_eigenvals, *k, n);
-        /* T = zeros(n,*k); */
-        printf("k5: %d\n", *k);
+        free_matrix(lnorm_result, n);
+        free_matrix(jacobi_result, n + 1);
+        free(sorted_eigenvals);
         return T;
     }
 

@@ -38,10 +38,14 @@ int main(int argc, char *argv[])
     if (goal == e_jacobi)
     {
         print_to_output(output, n + 1, n);
+        free_matrix(output, n + 1);
     }
     else
+    {
         print_to_output(output, n, n);
-
+        free_matrix(output, n);
+    }   
+    free_matrix(data, n);
     return 0;
 }
 
@@ -68,27 +72,6 @@ void read_matrix(FILE **input, double **matrix, int n, int d)
                     return;
                 }
                 
-            }
-        }
-    }
-}
-
-void print_to_output(double **output, int n, int d)
-{
-    int i, j;
-
-    for (i = 0; i < n; i++)
-    {
-        for (j = 0; j < d; j++)
-        {
-            printf("%.4f", output[i][j]);
-            if (j != d - 1)
-            {
-                printf(",");
-            }
-            else
-            {
-                printf("\n");
             }
         }
     }
@@ -132,33 +115,6 @@ int isValidInput(int argc, char *argv[], FILE **input, enum goal_enum *goal)
     }    
     return 1;
 }
-/*
-void get_sizes(FILE **input, int *n, int *d)
-{
-    char *lineptr;
-    int line_read = 1, i;
-    n = 0;
-
-    while (line_read)
-    {
-        printf("read line");
-        lineptr = NULL;
-        if (fscanf(*input, "%[^\n]", lineptr) == 0)
-        {
-            line_read = 0;
-            *d = 1;
-            for (i = 0; i < (int)strlen(lineptr); i++)
-            {
-                if (lineptr[i] == ',')
-                    d += 1;
-            }
-        }
-        n += 1;
-    }
-    fseek(*input, 0, SEEK_SET);
-    printf("done get_sizes\n");
-}
-*/
 
 void get_sizes(FILE **input, int *N, int *d)
 {
