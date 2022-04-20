@@ -46,7 +46,6 @@ double **create_T(double **jacobi_mat, double *sorted_eigenvals, int k, int n)
     double **T;
     T = create_U(jacobi_mat, sorted_eigenvals, k, n);
     normalize(T, k, n);
-
     return T;
 }
 
@@ -54,15 +53,15 @@ void normalize(double **U, int k, int n)
 {
     int i, j;
     double norm;
-    for (j = 0; j < k; j++)
+    for (i = 0; i < n; i++)
     {
         norm = 0;
-        for (i = 0; i < n; i++)
+        for (j = 0; j < k; j++)
         {
             norm += U[i][j] * U[i][j];
         }
         norm = sqrt(norm);
-        for (i = 0; i < n; i++)
+        for (j = 0; j < k; j++)
         {
             U[i][j] = U[i][j] / norm;
         }
@@ -72,25 +71,26 @@ void normalize(double **U, int k, int n)
 double **create_U(double **jacobi_mat, double *sorted_eigenvals, int k, int n)
 {
     int i, j = 0, m;
+    /* int time_to_stop_i = k - 1; */
     double current_eigenvalue;
     double **U;
 
     U = allocate_double_matrix(n, k);
-
     for (i = 0; i < k; i++)
     {
         current_eigenvalue = sorted_eigenvals[i];
+        j = 0;
         while (current_eigenvalue != jacobi_mat[0][j])
         {
             j++;
         }
+        /* if (i == time_to_stop_i) break; */
         for (m = 0; m < n ; m++)
         {
             /* the first row is the eigen values, so we skip it*/
             U[m][i] = jacobi_mat[m+1][j];
         }
     }
-
     return U;
 }
 
@@ -341,7 +341,7 @@ int eigen_gap(double *eigen_values, int length)
     int i, max_index = 0;
     double max_eigen_gap = 0;
     if (length == 1) return 1;
-    for (i = 1; i <= (length / 2); i++)
+    for (i = 0; i < (length / 2); i++)
     {
         if (fabs(eigen_values[i] - eigen_values[i + 1]) >= max_eigen_gap)
         {
@@ -349,7 +349,7 @@ int eigen_gap(double *eigen_values, int length)
             max_index = i;
         }
     }
-    return max_index;
+    return max_index + 1;
 }
 
 void Kmeans(double **matrix, double **mu, int n, int d, int k, int max_iter, double EPSILON)
@@ -450,6 +450,23 @@ double dist(double *x1, double *x2, int dim)
     return sqrt(total);
 }
 
+double **zeros(int n,int d)
+{
+    int j,i;
+    double** T;
+    T = allocate_double_matrix(n,d);
+    for(i=0 ; i<n ; i++)
+    {
+        for(j=0 ; j<d ; j++)
+        {
+            T[i][j]=0.0;
+        }
+    }
+    return T;
+}
+
+
+
 double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal)
 {
     double *sorted_eigenvals, *ddg_list_result;
@@ -484,9 +501,15 @@ double **execute_goal(double **data, int n, int d, int *k, double **mu, int goal
     {
         jacobi_result = jacobi(lnorm_result, n, JAC_MAX_ITER, JAC_EPS);
         sorted_eigenvals = sort(jacobi_result[0], n);
-        if (k == 0)
+        if (*k == 0)
+        {
+            printf("k2: %d\n", *k);
             *k = eigen_gap(sorted_eigenvals, n);
+        }
+        printf("k3: %d\n", *k);
         T = create_T(jacobi_result, sorted_eigenvals, *k, n);
+        /* T = zeros(n,*k); */
+        printf("k5: %d\n", *k);
         return T;
     }
 

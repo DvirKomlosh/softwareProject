@@ -165,7 +165,7 @@ if __name__ == '__main__':
             # Invalid value of the first parameter
             print("Invalid Input! (4)")
             exit(1)
-        if k >= N and goal == GoalEnum.spk:
+        if k >= N:
             # Invalid value of the first parameter - the number of clusters 
             # should be smaller then the number of data points.
             print("Invalid Input! (8)")
@@ -173,6 +173,8 @@ if __name__ == '__main__':
         # Perform full spectral kmeans
         T = spkmeans.fit(np.ndarray.tolist(data), 
             N, d, k, None, GoalEnum.kmeans.value)
+        k = len(T[0])
+        print("k7.5: " + str(k) + "\n")
         mu_indices, mu = k_means_pp(k, T)
         found_centroids = spkmeans.fit(T, 
             N, k, k, np.ndarray.tolist(mu), GoalEnum.spk.value)

@@ -81,6 +81,7 @@ static PyObject* fit(PyObject *self, PyObject *args)
         printf("An Error Has Occurred\n");
         return Py_BuildValue("");
     }
+
     printf("0.5\n");
     if (goal_num == 1) goal = e_spk;
     else if (goal_num == 2) goal = e_wam;
@@ -158,7 +159,9 @@ static PyObject* fit(PyObject *self, PyObject *args)
 
     /* Activate the main C function */
     returned_mat = execute_goal(primary, n, d, &k, mu_arr, goal);
-
+    printf("n1: %d\n", n);
+    printf("d1: %d\n", d);
+    printf("k1: %d\n", k);
     /* Transform the returned matrix to a PyObject (PyList) */   
     if (goal == e_spk) po_return_mat = PyList_New(k);
     else if (goal == e_jacobi) po_return_mat = PyList_New(n+1);
