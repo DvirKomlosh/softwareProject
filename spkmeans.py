@@ -174,8 +174,8 @@ if __name__ == '__main__':
         T = spkmeans.fit(np.ndarray.tolist(data), 
             N, d, k, None, GoalEnum.kmeans.value)
         mu_indices, mu = k_means_pp(k, T)
-        found_centroids = spkmeans.fit(np.ndarray.tolist(data), 
-            N, d, k, np.ndarray.tolist(mu), GoalEnum.spk.value)
+        found_centroids = spkmeans.fit(T, 
+            N, k, k, np.ndarray.tolist(mu), GoalEnum.spk.value)
         if not found_centroids:
             exit(1)
         output_spk(mu_indices, found_centroids)

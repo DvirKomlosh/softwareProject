@@ -1,4 +1,5 @@
 #pragma once
+#include "spkmeans.h"
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -53,15 +54,15 @@ void normalize(double **U, int k, int n)
 {
     int i, j;
     double norm;
-    for (j = 0; j < n; j++)
+    for (j = 0; j < k; j++)
     {
         norm = 0;
-        for (i = 0; i < k; i++)
+        for (i = 0; i < n; i++)
         {
             norm += U[i][j] * U[i][j];
         }
         norm = sqrt(norm);
-        for (i = 0; i < k; i++)
+        for (i = 0; i < n; i++)
         {
             U[i][j] = U[i][j] / norm;
         }
@@ -70,21 +71,23 @@ void normalize(double **U, int k, int n)
 
 double **create_U(double **jacobi_mat, double *sorted_eigenvals, int k, int n)
 {
-    int i, j = -1;
+    int i, j = 0, m;
     double current_eigenvalue;
+    double **U;
 
-    double **U = allocate_double_matrix(n, k);
+    U = allocate_double_matrix(n, k);
 
     for (i = 0; i < k; i++)
     {
         current_eigenvalue = sorted_eigenvals[i];
-        while (current_eigenvalue != jacobi_mat[0][++j])
+        while (current_eigenvalue != jacobi_mat[0][j])
         {
+            j++;
         }
-        for (k = 1; k < n + 1; k++)
+        for (m = 0; m < n ; m++)
         {
             /* the first row is the eigen values, so we skip it*/
-            U[j][k] = jacobi_mat[j][k];
+            U[m][i] = jacobi_mat[m+1][j];
         }
     }
 
@@ -95,6 +98,7 @@ double **allocate_double_matrix(int length, int width)
 {
     int i;
     double **matrix = (double **)malloc(length * sizeof(double *));
+    
     for (i = 0; i < length; i++)
     {
         matrix[i] = allocate_double_array(width);
@@ -194,9 +198,6 @@ void get_rotation_values(int *i, int *j, double *c, double *s, double **A, int d
     *c = 1 / (sqrt(t * t + 1));
     *s = t * (*c);
 
-    printf("debug: t = %f, theta = %f\n", t, theta);
-    printf("debug: i = %d, j = %d \n", *i, *j);
-    printf("debug: c = %f, s = %f \n", *c, *s);
 }
 
 /* changes A to A':
@@ -287,20 +288,6 @@ double **jacobi(double **A, int n, int max_iter, double epsilon)
         update_A(A, i, j, c, s, n);
         update_V(V, i, j, c, s, n);
 
-        printf("current_iter = %d\n", current_iter);
-
-        printf("A = \n");
-
-        printf("%f,%f,%f\n", A[0][0], A[0][1], A[0][2]);
-        printf("%f,%f,%f\n", A[1][0], A[1][1], A[1][2]);
-        printf("%f,%f,%f\n\n", A[2][0], A[2][1], A[2][2]);
-
-        printf("V = \n");
-
-        printf("%f %f %f\n", V[0][0], V[0][1], V[0][2]);
-        printf("%f %f %f\n", V[1][0], V[1][1], V[1][2]);
-        printf("%f %f %f\n\n", V[2][0], V[2][1], V[2][2]);
-
         convarged = (fabs(off_diag_squared(A, n) - offA) < epsilon);
         offA = off_diag_squared(A, n);
         current_iter++;
@@ -353,9 +340,10 @@ int eigen_gap(double *eigen_values, int length)
 {
     int i, max_index = 0;
     double max_eigen_gap = 0;
+    if (length == 1) return 1;
     for (i = 1; i <= (length / 2); i++)
     {
-        if (fabs(eigen_values[i] - eigen_values[i + 1]) > max_eigen_gap)
+        if (fabs(eigen_values[i] - eigen_values[i + 1]) >= max_eigen_gap)
         {
             max_eigen_gap = fabs(eigen_values[i] - eigen_values[i + 1]);
             max_index = i;
